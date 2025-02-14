@@ -393,7 +393,19 @@ footer a {
 
 .copy {
     font-size: 12px;
-    color: rgb(100, 100, 100);
+    color: rgb(71, 71, 71);
     font-family: Arial, Helvetica, sans-serif;
     margin-top: -25px;
+}
+
+.women {
+    background: linear-gradient(135deg, #502c4d, #ffffff, #502c4d);
+}
+
+.dama {
+    color: #72346d;
+}
+
+.dama:hover {
+    color: #994692;
 }
