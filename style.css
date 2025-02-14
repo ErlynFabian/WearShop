@@ -387,25 +387,29 @@ footer a {
     color: #2c3e50;
 }
 
-.h1, .p, .dama {
-    margin-top: -22px;
+.h1, .p {
+    margin-top: -25px;
 }
 
 .copy {
     font-size: 12px;
-    color: rgb(71, 71, 71);
+    color: rgb(100, 100, 100);
     font-family: Arial, Helvetica, sans-serif;
     margin-top: -25px;
 }
 
 .women {
-    background: linear-gradient(135deg, #502c4d, #ffffff, #502c4d);
+    background: linear-gradient(135deg, #dda90d, #f2e1a3, #dda90d);
 }
 
 .dama {
-    color: #72346d;
+    color: #0a0a08;
 }
 
-.dama:hover {
-    color: #994692;
+.damas {
+    color: #000000;
+}
+
+.damas:hover {
+    color: #dda90d;
 }
