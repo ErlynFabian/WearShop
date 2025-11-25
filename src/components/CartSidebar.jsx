@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiMinus, FiPlus, FiTrash2 } from 'react-icons/fi';
 import useCartStore from '../context/cartStore';
+import { formatPrice } from '../utils/formatPrice';
 
 const CartSidebar = () => {
   const { isOpen, closeCart, items, removeItem, updateQuantity, clearCart } = useCartStore();
@@ -63,7 +64,7 @@ const CartSidebar = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold text-black mb-1">{item.name}</h3>
                         <p className="text-lg font-bold text-black mb-2">
-                          ${item.price.toFixed(2)}
+                          {formatPrice(item.price)}
                         </p>
                         <div className="flex items-center space-x-3">
                           <button
@@ -98,7 +99,7 @@ const CartSidebar = () => {
               <div className="border-t p-6 space-y-4">
                 <div className="flex items-center justify-between text-xl font-bold">
                   <span>Total:</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>{formatPrice(total)}</span>
                 </div>
                 <button
                   onClick={() => {

@@ -4,8 +4,8 @@ import { FiArrowLeft } from 'react-icons/fi';
 
 const ReturnsPolicy = () => {
   return (
-    <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
+      <div className="max-w-4xl mx-auto w-full">
         {/* Back Button */}
         <Link
           to="/"
@@ -18,7 +18,7 @@ const ReturnsPolicy = () => {
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-6xl md:text-8xl font-black text-black mb-4"
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-black mb-4 break-words"
         >
           POLÍTICA DE DEVOLUCIONES
         </motion.h1>
@@ -27,21 +27,21 @@ const ReturnsPolicy = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="prose prose-lg max-w-none space-y-6 text-gray-700"
+          className="prose prose-lg max-w-none space-y-6 text-gray-700 break-words"
         >
           <p className="text-sm text-gray-500 mb-8">
             Última actualización: {new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
 
           <section>
-            <h2 className="text-2xl font-bold text-black mb-4">1. Período de Devolución</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-4 break-words">1. Período de Devolución</h2>
             <p>
               Tienes derecho a devolver productos no deseados dentro de los <strong>30 días</strong> posteriores a la fecha de recepción del pedido. Los productos deben estar en su estado original, sin usar, con todas las etiquetas y embalaje originales.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-black mb-4">2. Productos Elegibles para Devolución</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-4 break-words">2. Productos Elegibles para Devolución</h2>
             <p className="mb-4">
               Para ser elegible para una devolución, el producto debe:
             </p>
@@ -63,7 +63,7 @@ const ReturnsPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-black mb-4">3. Proceso de Devolución</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-4 break-words">3. Proceso de Devolución</h2>
             <p className="mb-4">
               Para iniciar una devolución:
             </p>
@@ -82,7 +82,7 @@ const ReturnsPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-black mb-4">4. Costos de Devolución</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-4 break-words">4. Costos de Devolución</h2>
             <p className="mb-4">
               Los costos de envío de devolución corren por cuenta del cliente, excepto en los siguientes casos:
             </p>
@@ -94,7 +94,7 @@ const ReturnsPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-black mb-4">5. Reembolsos</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-4 break-words">5. Reembolsos</h2>
             <p className="mb-4">
               Una vez recibido y verificado el producto devuelto, procesaremos tu reembolso. El reembolso se realizará utilizando el mismo método de pago utilizado para la compra original.
             </p>
@@ -112,14 +112,14 @@ const ReturnsPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-black mb-4">6. Cambios</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-4 break-words">6. Cambios</h2>
             <p>
               Actualmente no ofrecemos cambios directos. Si deseas un producto diferente, puedes devolver el producto original siguiendo nuestro proceso de devolución y realizar un nuevo pedido.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-black mb-4">7. Productos Defectuosos</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-4 break-words">7. Productos Defectuosos</h2>
             <p className="mb-4">
               Si recibes un producto defectuoso o dañado:
             </p>
@@ -132,7 +132,7 @@ const ReturnsPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-black mb-4">8. Contacto</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-4 break-words">8. Contacto</h2>
             <p>
               Si tienes preguntas sobre nuestra política de devoluciones, puedes contactarnos en:
             </p>

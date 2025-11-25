@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiX } from 'react-icons/fi';
 import useProductsStore from '../context/productsStore';
+import { formatPrice } from '../utils/formatPrice';
 
 const SearchModal = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,11 +132,11 @@ const SearchModal = ({ isOpen, onClose }) => {
                           <p className="text-lg font-bold text-black">
                             {product.onSale && product.salePrice ? (
                               <>
-                                <span className="text-red-600">${product.salePrice.toFixed(2)}</span>
-                                <span className="text-gray-400 line-through ml-2 text-sm">${product.price.toFixed(2)}</span>
+                                <span className="text-red-600">{formatPrice(product.salePrice)}</span>
+                                <span className="text-gray-400 line-through ml-2 text-sm">{formatPrice(product.price)}</span>
                               </>
                             ) : (
-                              `$${product.price.toFixed(2)}`
+                              formatPrice(product.price)
                             )}
                           </p>
                         </div>

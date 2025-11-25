@@ -1,7 +1,7 @@
-import { FiAlertCircle, FiX } from 'react-icons/fi';
+import { FiAlertTriangle, FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirmar', cancelText = 'Cancelar', type = 'danger' }) => {
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = 'Eliminar', cancelText = 'Cancelar', type = 'warning' }) => {
   if (!isOpen) return null;
 
   const handleConfirm = () => {
@@ -19,7 +19,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4"
           >
             {/* Modal */}
             <motion.div
@@ -32,18 +32,10 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-full ${
-                    type === 'danger' ? 'bg-red-100' : 
-                    type === 'warning' ? 'bg-yellow-100' : 
-                    'bg-blue-100'
-                  }`}>
-                    <FiAlertCircle className={`w-5 h-5 ${
-                      type === 'danger' ? 'text-red-600' : 
-                      type === 'warning' ? 'text-yellow-600' : 
-                      'text-blue-600'
-                    }`} />
+                  <div className={`p-2 rounded-full ${type === 'warning' ? 'bg-yellow-100' : 'bg-red-100'}`}>
+                    <FiAlertTriangle className={`w-5 h-5 ${type === 'warning' ? 'text-yellow-600' : 'text-red-600'}`} />
                   </div>
-                  <h3 className="text-xl font-bold text-black">{title}</h3>
+                  <h3 className="text-xl font-bold text-black">{title || 'Confirmar acción'}</h3>
                 </div>
                 <button
                   onClick={onClose}
@@ -60,18 +52,16 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
               <div className="flex items-center justify-end space-x-3">
                 <button
                   onClick={onClose}
-                  className="px-6 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                 >
                   {cancelText}
                 </button>
                 <button
                   onClick={handleConfirm}
-                  className={`px-6 py-2 rounded-lg font-medium text-white transition-colors ${
-                    type === 'danger' 
-                      ? 'bg-red-600 hover:bg-red-700' 
-                      : type === 'warning'
-                      ? 'bg-yellow-500 hover:bg-yellow-600'
-                      : 'bg-blue-600 hover:bg-blue-700'
+                  className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                    type === 'warning'
+                      ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                      : 'bg-red-600 text-white hover:bg-red-700'
                   }`}
                 >
                   {confirmText}
@@ -86,4 +76,3 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
 };
 
 export default ConfirmModal;
-

@@ -59,16 +59,6 @@ const Ofertas = () => {
     ? productsByType[selectedType] || []
     : ofertasProducts;
 
-  if (loading) {
-    return (
-      <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="text-gray-600">Cargando productos...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">

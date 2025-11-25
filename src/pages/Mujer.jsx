@@ -127,16 +127,6 @@ const Mujer = () => {
 
   const displayedProducts = filteredProducts;
 
-  if (loading) {
-    return (
-      <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="text-gray-600">Cargando productos...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -191,10 +181,65 @@ const Mujer = () => {
           </div>
         )}
 
-        {/* Productos agrupados por tipo si no hay filtro */}
+        {/* Productos agrupados por tipo si no hay filtro de tipo, pero aplicar otros filtros */}
         {!selectedType ? (
           orderedTypes.length > 0 ? (
-            orderedTypes.map((type) => (
+            orderedTypes.map((type) => {
+              // Aplicar filtros a cada grupo de tipo
+              let typeProducts = productsByType[type] || [];
+              
+              // Filtro por precio
+              if (filters.minPrice || filters.maxPrice) {
+                typeProducts = typeProducts.filter(product => {
+                  const price = product.onSale && product.salePrice ? product.salePrice : product.price;
+                  const min = filters.minPrice ? parseFloat(filters.minPrice) : 0;
+                  const max = filters.maxPrice ? parseFloat(filters.maxPrice) : Infinity;
+                  return price >= min && price <= max;
+                });
+              }
+
+              // Filtro por tallas
+              if (filters.sizes.length > 0) {
+                typeProducts = typeProducts.filter(product => {
+                  return filters.sizes.some(size => (product.sizes || []).includes(size));
+                });
+              }
+
+              // Filtro por colores
+              if (filters.colors.length > 0) {
+                typeProducts = typeProducts.filter(product => {
+                  return filters.colors.some(color => (product.colors || []).includes(color));
+                });
+              }
+
+              // Ordenar
+              if (filters.sortBy !== 'default') {
+                typeProducts = [...typeProducts].sort((a, b) => {
+                  switch (filters.sortBy) {
+                    case 'price-asc': {
+                      const priceA = a.onSale && a.salePrice ? a.salePrice : a.price;
+                      const priceB = b.onSale && b.salePrice ? b.salePrice : b.price;
+                      return priceA - priceB;
+                    }
+                    case 'price-desc': {
+                      const priceA = a.onSale && a.salePrice ? a.salePrice : a.price;
+                      const priceB = b.onSale && b.salePrice ? b.salePrice : b.price;
+                      return priceB - priceA;
+                    }
+                    case 'name-asc':
+                      return a.name.localeCompare(b.name);
+                    case 'name-desc':
+                      return b.name.localeCompare(a.name);
+                    default:
+                      return 0;
+                  }
+                });
+              }
+
+              // Solo mostrar el tipo si tiene productos después de filtrar
+              if (typeProducts.length === 0) return null;
+
+              return (
               <div key={type} className="mb-16">
                 <motion.h2
                   initial={{ opacity: 0, y: 20 }}
@@ -204,16 +249,17 @@ const Mujer = () => {
                 >
                   {typeLabels[type] || type}
                 </motion.h2>
-                <ProductGrid products={productsByType[type]} />
+                  <ProductGrid products={typeProducts} />
               </div>
-            ))
+              );
+            })
           ) : (
-            // Si no hay tipos ordenados, mostrar todos los productos
-            mujerProducts.length > 0 ? (
-              <ProductGrid products={mujerProducts} />
+            // Si no hay tipos ordenados, mostrar todos los productos con filtros aplicados
+            displayedProducts.length > 0 ? (
+              <ProductGrid products={displayedProducts} />
             ) : (
               <div className="text-center py-16">
-                <p className="text-gray-600 text-lg">No hay productos disponibles en esta categoría</p>
+                <p className="text-gray-600 text-lg">No hay productos disponibles para este filtro</p>
               </div>
             )
           )

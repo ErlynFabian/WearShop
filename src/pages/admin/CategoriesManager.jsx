@@ -69,17 +69,17 @@ const CategoriesManager = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-5xl font-black text-black mb-2">Categorías</h2>
-          <p className="text-gray-600">Gestiona las categorías de productos</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-black mb-2 break-words">Categorías</h2>
+          <p className="text-sm sm:text-base text-gray-600">Gestiona las categorías de productos</p>
         </div>
         {!isCreating && !editingId && (
           <button
             onClick={handleCreate}
-            className="flex items-center space-x-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-6 py-3 rounded-lg font-medium hover:from-yellow-500 hover:to-amber-600 transition-all shadow-lg"
+            className="flex items-center justify-center space-x-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:from-yellow-500 hover:to-amber-600 transition-all shadow-lg whitespace-nowrap text-sm sm:text-base"
           >
-            <FiPlus className="w-5 h-5" />
+            <FiPlus className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
             <span>Crear Categoría</span>
           </button>
         )}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { FiBell, FiX, FiCheck, FiPackage, FiDollarSign, FiAlertTriangle, FiShoppingCart, FiInfo } from 'react-icons/fi';
+import { FiBell, FiX, FiCheck, FiPackage, FiDollarSign, FiAlertTriangle, FiShoppingCart, FiInfo, FiMail, FiFolder } from 'react-icons/fi';
 import { notificationsService } from '../../services/notificationsService';
 import { supabase } from '../../lib/supabase';
 
@@ -37,13 +37,33 @@ const NotificationsDropdown = () => {
           )
           .subscribe();
 
-        // Limpiar suscripción al desmontar
+        // Actualizar periódicamente para asegurar sincronización
+        const interval = setInterval(() => {
+          loadNotifications();
+        }, 5000); // Actualizar cada 5 segundos
+
+        // Limpiar suscripción y intervalo al desmontar
         return () => {
           supabase.removeChannel(channel);
+          clearInterval(interval);
         };
       }
     }
   }, [tableExists]);
+
+  // Escuchar eventos personalizados cuando se marca una notificación como leída
+  useEffect(() => {
+    const handleNotificationUpdate = () => {
+      loadNotifications();
+    };
+
+    // Escuchar evento personalizado
+    window.addEventListener('notification-updated', handleNotificationUpdate);
+
+    return () => {
+      window.removeEventListener('notification-updated', handleNotificationUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -169,6 +189,8 @@ const NotificationsDropdown = () => {
         return <FiFolder className="w-5 h-5 text-purple-600" />;
       case 'system':
         return <FiInfo className="w-5 h-5 text-gray-600" />;
+      case 'contact_message':
+        return <FiMail className="w-5 h-5 text-blue-600" />;
       default:
         return <FiBell className="w-5 h-5 text-gray-600" />;
     }
@@ -200,6 +222,8 @@ const NotificationsDropdown = () => {
         return 'bg-red-50 border-red-200';
       case 'system':
         return 'bg-gray-50 border-gray-200';
+      case 'contact_message':
+        return 'bg-blue-50 border-blue-200';
       default:
         return 'bg-gray-50 border-gray-200';
     }

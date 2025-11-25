@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { productsService } from './productsService';
 
 export const salesService = {
   async getAll() {
@@ -89,6 +90,7 @@ export const salesService = {
   },
 
   async create(sale) {
+    // Crear la venta
     const { data, error } = await supabase
       .from('sales')
       .insert([sale])
@@ -96,10 +98,42 @@ export const salesService = {
       .single();
     
     if (error) throw error;
+
+    // Actualizar el stock del producto si la venta está completada o es pendiente
+    // (asumimos que las ventas pendientes también reservan stock)
+    if (sale.product_id && sale.quantity && (sale.status === 'completed' || sale.status === 'pending')) {
+      try {
+        // Obtener el producto actual
+        const product = await productsService.getById(sale.product_id);
+        
+        if (product) {
+          const currentStock = product.stock || 0;
+          const newStock = Math.max(0, currentStock - sale.quantity); // No permitir stock negativo
+          
+          // Actualizar el stock del producto
+          await productsService.update(sale.product_id, { stock: newStock });
+        }
+      } catch (stockError) {
+        console.error('Error updating product stock:', stockError);
+        // No lanzar el error para no fallar la creación de la venta
+        // pero loguearlo para debugging
+      }
+    }
+
     return data;
   },
 
   async update(id, updates) {
+    // Obtener la venta actual antes de actualizar
+    const { data: currentSale, error: fetchError } = await supabase
+      .from('sales')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError) throw fetchError;
+
+    // Actualizar la venta
     const { data, error } = await supabase
       .from('sales')
       .update(updates)
@@ -108,10 +142,75 @@ export const salesService = {
       .single();
     
     if (error) throw error;
+
+    // Manejar cambios en el stock cuando se actualiza una venta
+    if (currentSale.product_id && currentSale.quantity) {
+      try {
+        const product = await productsService.getById(currentSale.product_id);
+        
+        if (product) {
+          let stockAdjustment = 0;
+          const oldStatus = currentSale.status;
+          const newStatus = updates.status !== undefined ? updates.status : oldStatus;
+          const oldQuantity = currentSale.quantity;
+          const newQuantity = updates.quantity !== undefined ? updates.quantity : oldQuantity;
+          
+          // Si la venta cambia de estado
+          if (updates.status !== undefined) {
+            // Si cambia de completada/pendiente a cancelada, devolver stock
+            if ((oldStatus === 'completed' || oldStatus === 'pending') && newStatus === 'cancelled') {
+              stockAdjustment = oldQuantity; // Devolver stock (sumar)
+            }
+            // Si cambia de cancelada a completada/pendiente, restar stock
+            else if (oldStatus === 'cancelled' && (newStatus === 'completed' || newStatus === 'pending')) {
+              stockAdjustment = -newQuantity; // Restar stock
+            }
+          }
+          
+          // Si cambia la cantidad y la venta está activa
+          if (updates.quantity !== undefined && newStatus !== 'cancelled') {
+            // Si la venta estaba activa, ajustar según la diferencia
+            if (oldStatus === 'completed' || oldStatus === 'pending') {
+              // La diferencia: si aumenta cantidad, restar más; si disminuye, devolver
+              stockAdjustment += (oldQuantity - newQuantity);
+            }
+            // Si la venta estaba cancelada pero ahora se activa, ya se manejó arriba
+            // Si solo cambia cantidad en venta cancelada, no hacer nada
+          }
+          
+          // Aplicar el ajuste de stock
+          if (stockAdjustment !== 0) {
+            const currentStock = product.stock || 0;
+            // stockAdjustment positivo = devolver stock (sumar)
+            // stockAdjustment negativo = restar stock
+            const newStock = Math.max(0, currentStock + stockAdjustment);
+            
+            await productsService.update(currentSale.product_id, { stock: newStock });
+          }
+        }
+      } catch (stockError) {
+        console.error('Error updating product stock:', stockError);
+        // No lanzar el error para no fallar la actualización de la venta
+      }
+    }
+
     return data;
   },
 
   async delete(id) {
+    // Obtener la venta antes de eliminarla para actualizar el stock
+    const { data: saleToDelete, error: fetchError } = await supabase
+      .from('sales')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // PGRST116 significa que no se encontró el registro, lo cual está bien si ya fue eliminado
+      throw fetchError;
+    }
+
+    // Eliminar la venta
     const { data, error } = await supabase
       .from('sales')
       .delete()
@@ -121,6 +220,24 @@ export const salesService = {
     if (error) {
       console.error('Supabase delete error:', error);
       throw error;
+    }
+
+    // Si la venta estaba activa (completed o pending), devolver el stock
+    if (saleToDelete && saleToDelete.product_id && saleToDelete.quantity && 
+        (saleToDelete.status === 'completed' || saleToDelete.status === 'pending')) {
+      try {
+        const product = await productsService.getById(saleToDelete.product_id);
+        
+        if (product) {
+          const currentStock = product.stock || 0;
+          const newStock = currentStock + saleToDelete.quantity; // Devolver stock
+          
+          await productsService.update(saleToDelete.product_id, { stock: newStock });
+        }
+      } catch (stockError) {
+        console.error('Error updating product stock after sale deletion:', stockError);
+        // No lanzar el error para no fallar la eliminación de la venta
+      }
     }
     
     return data;

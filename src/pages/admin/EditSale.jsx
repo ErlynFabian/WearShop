@@ -4,6 +4,7 @@ import { FiArrowLeft, FiSave } from 'react-icons/fi';
 import { salesService } from '../../services/salesService';
 import useProductsStore from '../../context/productsStore';
 import AlertModal from '../../components/admin/AlertModal';
+import { formatPrice } from '../../utils/formatPrice';
 
 const EditSale = () => {
   const { id } = useParams();
@@ -16,6 +17,8 @@ const EditSale = () => {
     quantity: 1,
     price: '',
     total: '',
+    cost: 0,
+    profit: 0,
     customer_name: '',
     customer_phone: '',
     customer_email: '',
@@ -28,6 +31,26 @@ const EditSale = () => {
     loadSale();
   }, [id]);
 
+  // Actualizar costo y ganancias cuando cambian los productos o el producto seleccionado
+  useEffect(() => {
+    if (formData.product_id && products.length > 0) {
+      const product = products.find(p => p.id === parseInt(formData.product_id));
+      if (product && product.cost !== undefined) {
+        const cost = product.cost || 0;
+        const quantity = formData.quantity || 1;
+        const price = parseFloat(formData.price) || 0;
+        const total = quantity * price;
+        const profit = total - (cost * quantity);
+        
+        setFormData(prev => ({
+          ...prev,
+          cost: cost,
+          profit: profit.toFixed(2)
+        }));
+      }
+    }
+  }, [products, formData.product_id, formData.quantity, formData.price]);
+
   const loadSale = async () => {
     setLoading(true);
     try {
@@ -35,12 +58,22 @@ const EditSale = () => {
       const sale = sales.find(s => s.id === parseInt(id));
       
       if (sale) {
+        // Obtener el producto para calcular el costo si no está guardado
+        const product = products.find(p => p.id === sale.product_id);
+        const cost = sale.cost || (product ? (product.cost || 0) : 0);
+        const quantity = sale.quantity || 1;
+        const price = sale.price || 0;
+        const total = sale.total || (quantity * price);
+        const profit = sale.profit !== undefined ? sale.profit : (total - (cost * quantity));
+        
         setFormData({
           product_id: sale.product_id || '',
           product_name: sale.product_name || '',
-          quantity: sale.quantity || 1,
-          price: sale.price || '',
-          total: sale.total || '',
+          quantity: quantity,
+          price: price,
+          total: total,
+          cost: cost,
+          profit: profit,
           customer_name: sale.customer_name || '',
           customer_phone: sale.customer_phone || '',
           customer_email: sale.customer_email || '',
@@ -66,11 +99,13 @@ const EditSale = () => {
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
       
-      // Calcular total automáticamente
+      // Calcular total y ganancias automáticamente
       if (name === 'quantity' || name === 'price') {
         const qty = name === 'quantity' ? parseInt(value) || 0 : parseInt(prev.quantity) || 0;
         const price = name === 'price' ? parseFloat(value) || 0 : parseFloat(prev.price) || 0;
+        const cost = prev.cost || 0;
         updated.total = (qty * price).toFixed(2);
+        updated.profit = (qty * price - qty * cost).toFixed(2);
       }
       
       return updated;
@@ -83,12 +118,16 @@ const EditSale = () => {
     
     if (product) {
       const price = product.onSale && product.salePrice ? product.salePrice : product.price;
+      const cost = product.cost || 0;
+      const quantity = formData.quantity || 1;
       setFormData(prev => ({
         ...prev,
         product_id: productId,
         product_name: product.name,
         price: price.toFixed(2),
-        total: (prev.quantity * price).toFixed(2)
+        cost: cost,
+        total: (quantity * price).toFixed(2),
+        profit: (quantity * price - quantity * cost).toFixed(2)
       }));
     } else {
       setFormData(prev => ({
@@ -96,7 +135,9 @@ const EditSale = () => {
         product_id: '',
         product_name: '',
         price: '',
-        total: ''
+        cost: 0,
+        total: '',
+        profit: 0
       }));
     }
   };
@@ -109,7 +150,9 @@ const EditSale = () => {
         ...formData,
         quantity: parseInt(formData.quantity),
         price: parseFloat(formData.price),
-        total: parseFloat(formData.total)
+        total: parseFloat(formData.total),
+        cost: parseFloat(formData.cost) || 0,
+        profit: parseFloat(formData.profit) || 0
       });
       navigate('/admin/sales');
     } catch (error) {
@@ -163,7 +206,7 @@ const EditSale = () => {
                 <option value="">Seleccionar producto</option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
-                    {product.name} - RD${(product.onSale && product.salePrice ? product.salePrice : product.price).toFixed(2)}
+                    {product.name} - {formatPrice(product.onSale && product.salePrice ? product.salePrice : product.price)}
                   </option>
                 ))}
               </select>
@@ -202,14 +245,26 @@ const EditSale = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Total (RD$) *
+                Total de Venta (RD$) *
               </label>
               <input
                 type="text"
-                value={formData.total}
+                value={formatPrice(formData.total)}
                 readOnly
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-semibold"
               />
+            </div>
+
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <label className="block text-sm font-medium text-green-800 mb-2">
+                Ganancias (RD$)
+              </label>
+              <div className="text-2xl font-bold text-green-700">
+                {formatPrice(formData.profit)}
+              </div>
+              <p className="text-xs text-green-600 mt-1">
+                Total: {formatPrice(formData.total)} - Costo: {formatPrice((formData.quantity * formData.cost).toFixed(2))}
+              </p>
             </div>
 
             <div>

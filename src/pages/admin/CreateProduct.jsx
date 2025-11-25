@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiSave } from 'react-icons/fi';
+import { FiArrowLeft, FiSave, FiX } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import useProductsStore from '../../context/productsStore';
 import useCategoriesStore from '../../context/categoriesStore';
@@ -14,6 +14,7 @@ const CreateProduct = () => {
 
   const [formData, setFormData] = useState({
     name: '',
+    cost: '',
     price: '',
     description: '',
     category: '',
@@ -92,10 +93,23 @@ const CreateProduct = () => {
     }
   };
 
+  const handleRemoveImage = () => {
+    setFormData({
+      ...formData,
+      image: ''
+    });
+    // Limpiar el input file
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     addProduct({
       ...formData,
+      cost: parseFloat(formData.cost) || 0,
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock) || 0,
       sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()).filter(s => s) : [],
@@ -139,7 +153,25 @@ const CreateProduct = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Precio *
+                Costo (Precio de compra) *
+              </label>
+              <input
+                type="number"
+                name="cost"
+                value={formData.cost}
+                onChange={handleChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                placeholder="2000"
+              />
+              <p className="mt-1 text-xs text-gray-500">Precio al que compraste el producto (RD$)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Precio de Venta *
               </label>
               <input
                 type="number"
@@ -150,8 +182,9 @@ const CreateProduct = () => {
                 min="0"
                 step="0.01"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                placeholder="129.99"
+                placeholder="3500"
               />
+              <p className="mt-1 text-xs text-gray-500">Precio al que venderás el producto (RD$)</p>
             </div>
 
             <div>
@@ -272,7 +305,15 @@ const CreateProduct = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
               />
               {formData.image && (
-                <div className="mt-4">
+                <div className="mt-4 relative">
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors z-10"
+                    aria-label="Eliminar imagen"
+                  >
+                    <FiX className="w-4 h-4" />
+                  </button>
                   <img
                     src={formData.image}
                     alt="Preview"

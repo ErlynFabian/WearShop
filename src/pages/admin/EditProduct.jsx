@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiSave } from 'react-icons/fi';
+import { FiArrowLeft, FiSave, FiX } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import useProductsStore from '../../context/productsStore';
 import useCategoriesStore from '../../context/categoriesStore';
@@ -10,13 +10,25 @@ const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { products, updateProduct } = useProductsStore();
-  const { categories } = useCategoriesStore();
-  const { types } = useProductTypesStore();
+  const { categories, loadCategories } = useCategoriesStore();
+  const { types, loadTypes } = useProductTypesStore();
 
   const product = products.find(p => p.id === parseInt(id));
 
+  // Cargar categorías y tipos al montar el componente
+  useEffect(() => {
+    const loadData = async () => {
+      await Promise.all([
+        loadCategories(),
+        loadTypes()
+      ]);
+    };
+    loadData();
+  }, [loadCategories, loadTypes]);
+
   const [formData, setFormData] = useState({
     name: '',
+    cost: '',
     price: '',
     description: '',
     category: 'hombre',
@@ -33,6 +45,7 @@ const EditProduct = () => {
     if (product) {
       setFormData({
         name: product.name || '',
+        cost: product.cost || '',
         price: product.price || '',
         description: product.description || '',
         category: product.category || 'hombre',
@@ -48,7 +61,25 @@ const EditProduct = () => {
   }, [product]);
 
   const availableTypes = useMemo(() => {
-    return types[formData.category] || [];
+    if (!formData.category) return [];
+    
+    // Intentar buscar por el slug exacto primero
+    let categoryTypes = types[formData.category] || [];
+    
+    // Si no encuentra, intentar variaciones comunes (hombres/hombre, mujeres/mujer)
+    if (categoryTypes.length === 0) {
+      if (formData.category === 'hombres') {
+        categoryTypes = types['hombre'] || [];
+      } else if (formData.category === 'mujeres') {
+        categoryTypes = types['mujer'] || [];
+      } else if (formData.category === 'hombre') {
+        categoryTypes = types['hombres'] || [];
+      } else if (formData.category === 'mujer') {
+        categoryTypes = types['mujeres'] || [];
+      }
+    }
+    
+    return categoryTypes;
   }, [formData.category, types]);
 
   if (!product) {
@@ -84,10 +115,23 @@ const EditProduct = () => {
     }
   };
 
+  const handleRemoveImage = () => {
+    setFormData({
+      ...formData,
+      image: ''
+    });
+    // Limpiar el input file
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     updateProduct(product.id, {
       ...formData,
+      cost: parseFloat(formData.cost) || 0,
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock) || 0,
       sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()).filter(s => s) : [],
@@ -132,7 +176,25 @@ const EditProduct = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Precio *
+                Costo (Precio de compra) *
+              </label>
+              <input
+                type="number"
+                name="cost"
+                value={formData.cost}
+                onChange={handleChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                placeholder="2000"
+              />
+              <p className="mt-1 text-xs text-gray-500">Precio al que compraste el producto (RD$)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Precio de Venta *
               </label>
               <input
                 type="number"
@@ -143,7 +205,9 @@ const EditProduct = () => {
                 min="0"
                 step="0.01"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                placeholder="3500"
               />
+              <p className="mt-1 text-xs text-gray-500">Precio al que venderás el producto (RD$)</p>
             </div>
 
             <div>
@@ -175,8 +239,15 @@ const EditProduct = () => {
                 value={formData.type}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                disabled={!formData.category || availableTypes.length === 0}
               >
-                <option value="">Seleccionar tipo</option>
+                <option value="">
+                  {!formData.category 
+                    ? 'Selecciona una categoría primero' 
+                    : availableTypes.length === 0 
+                    ? 'No hay tipos disponibles' 
+                    : 'Seleccionar tipo'}
+                </option>
                 {availableTypes.map((type) => (
                   <option key={type.value} value={type.value}>
                     {type.label}
@@ -292,7 +363,15 @@ const EditProduct = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
               />
               {formData.image && (
-                <div className="mt-4">
+                <div className="mt-4 relative">
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors z-10"
+                    aria-label="Eliminar imagen"
+                  >
+                    <FiX className="w-4 h-4" />
+                  </button>
                   <img
                     src={formData.image}
                     alt="Preview"

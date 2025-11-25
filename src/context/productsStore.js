@@ -1,10 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { productsService } from '../services/productsService';
 import { supabase } from '../lib/supabase';
 
 const useProductsStore = create(
-  persist(
     (set, get) => {
       // Función helper para verificar si Supabase está configurado
       const isSupabaseConfigured = () => {
@@ -32,6 +30,7 @@ const useProductsStore = create(
             const mappedData = data.map(item => ({
               id: item.id,
               name: item.name,
+              cost: item.cost ? parseFloat(item.cost) : 0,
               price: parseFloat(item.price),
               description: item.description,
               category: item.category,
@@ -43,6 +42,7 @@ const useProductsStore = create(
               featured: item.featured || false,
               onSale: item.on_sale || false,
               salePrice: item.sale_price ? parseFloat(item.sale_price) : null,
+              created_at: item.created_at || null,
             }));
             set({ products: mappedData, loading: false });
             console.log('Productos cargados desde Supabase:', mappedData.length);
@@ -60,6 +60,7 @@ const useProductsStore = create(
           // Mapear camelCase a snake_case para Supabase
           const supabaseProduct = {
             name: product.name,
+            cost: product.cost || 0,
             price: product.price,
             description: product.description,
             category: product.category,
@@ -79,6 +80,7 @@ const useProductsStore = create(
               const mappedData = {
                 id: data.id,
                 name: data.name,
+                cost: data.cost ? parseFloat(data.cost) : 0,
                 price: parseFloat(data.price),
                 description: data.description,
                 category: data.category,
@@ -90,6 +92,7 @@ const useProductsStore = create(
                 featured: data.featured || false,
                 onSale: data.on_sale || false,
                 salePrice: data.sale_price ? parseFloat(data.sale_price) : null,
+                created_at: data.created_at || null,
               };
               set((state) => ({
                 products: [...state.products, mappedData]
@@ -117,6 +120,7 @@ const useProductsStore = create(
             try {
               const supabaseProduct = {
                 name: updatedProduct.name,
+                cost: updatedProduct.cost || 0,
                 price: updatedProduct.price,
                 description: updatedProduct.description,
                 category: updatedProduct.category,
@@ -133,6 +137,7 @@ const useProductsStore = create(
               const mappedData = {
                 id: data.id,
                 name: data.name,
+                cost: data.cost ? parseFloat(data.cost) : 0,
                 price: parseFloat(data.price),
                 description: data.description,
                 category: data.category,
@@ -144,6 +149,7 @@ const useProductsStore = create(
                 featured: data.featured || false,
                 onSale: data.on_sale || false,
                 salePrice: data.sale_price ? parseFloat(data.sale_price) : null,
+                created_at: data.created_at || null,
               };
               set((state) => ({
                 products: state.products.map(p => 
@@ -188,7 +194,46 @@ const useProductsStore = create(
           const product = get().products.find(p => p.id === id);
           if (!product) return;
           
-          await get().updateProduct(id, { ...product, featured: !product.featured });
+          // Actualización optimista: actualizar el estado inmediatamente
+          const newFeaturedStatus = !product.featured;
+          set((state) => ({
+            products: state.products.map(p => 
+              p.id === id ? { ...p, featured: newFeaturedStatus } : p
+            )
+          }));
+          
+          // Actualizar solo el campo featured en la base de datos (más rápido)
+          if (isSupabaseConfigured()) {
+            try {
+              const { data, error } = await supabase
+                .from('products')
+                .update({ featured: newFeaturedStatus })
+                .eq('id', id)
+                .select()
+                .single();
+              
+              if (error) throw error;
+              
+              // Actualizar solo el campo featured, preservando todos los demás campos del producto
+              set((state) => ({
+                products: state.products.map(p => 
+                  p.id === id ? { 
+                    ...p, 
+                    featured: data.featured || false 
+                  } : p
+                )
+              }));
+            } catch (error) {
+              console.error('Error updating featured status:', error);
+              // Si falla, revertir el cambio
+              set((state) => ({
+                products: state.products.map(p => 
+                  p.id === id ? { ...p, featured: product.featured } : p
+                )
+              }));
+              throw error;
+            }
+          }
         },
 
         // Suscripción a cambios en tiempo real
@@ -208,8 +253,65 @@ const useProductsStore = create(
               },
               async (payload) => {
                 console.log('Change received:', payload);
-                // Recargar productos cuando hay un cambio
+                // Actualizar el producto específico en lugar de recargar todo
+                if (payload.eventType === 'UPDATE' && payload.new) {
+                  const updatedProduct = payload.new;
+                  set((state) => ({
+                    products: state.products.map(p => {
+                      if (p.id === updatedProduct.id) {
+                        // Preservar la imagen existente si no viene en la actualización
+                        return {
+                          ...p,
+                          id: updatedProduct.id,
+                          name: updatedProduct.name || p.name,
+                          cost: updatedProduct.cost ? parseFloat(updatedProduct.cost) : (p.cost || 0),
+                          price: parseFloat(updatedProduct.price) || p.price,
+                          description: updatedProduct.description || p.description,
+                          category: updatedProduct.category || p.category,
+                          type: updatedProduct.type || p.type,
+                          stock: updatedProduct.stock || p.stock || 0,
+                          image: updatedProduct.image || p.image, // Preservar imagen existente
+                          sizes: updatedProduct.sizes || p.sizes || [],
+                          colors: updatedProduct.colors || p.colors || [],
+                          featured: updatedProduct.featured !== undefined ? updatedProduct.featured : p.featured,
+                          onSale: updatedProduct.on_sale !== undefined ? updatedProduct.on_sale : p.onSale,
+                          salePrice: updatedProduct.sale_price ? parseFloat(updatedProduct.sale_price) : p.salePrice,
+                          created_at: updatedProduct.created_at || p.created_at || null,
+                        };
+                      }
+                      return p;
+                    })
+                  }));
+                } else if (payload.eventType === 'INSERT' && payload.new) {
+                  const newProduct = payload.new;
+                  const mappedData = {
+                    id: newProduct.id,
+                    name: newProduct.name,
+                    cost: newProduct.cost ? parseFloat(newProduct.cost) : 0,
+                    price: parseFloat(newProduct.price),
+                    description: newProduct.description,
+                    category: newProduct.category,
+                    type: newProduct.type,
+                    stock: newProduct.stock || 0,
+                    image: newProduct.image,
+                    sizes: newProduct.sizes || [],
+                    colors: newProduct.colors || [],
+                    featured: newProduct.featured || false,
+                    onSale: newProduct.on_sale || false,
+                    salePrice: newProduct.sale_price ? parseFloat(newProduct.sale_price) : null,
+                    created_at: newProduct.created_at || null,
+                  };
+                  set((state) => ({
+                    products: [...state.products, mappedData]
+                  }));
+                } else if (payload.eventType === 'DELETE' && payload.old) {
+                  set((state) => ({
+                    products: state.products.filter(p => p.id !== payload.old.id)
+                  }));
+                } else {
+                  // Si no podemos actualizar específicamente, recargar todo
                 await get().loadProducts();
+                }
               }
             )
             .subscribe();
@@ -220,15 +322,7 @@ const useProductsStore = create(
           };
         },
       };
-    },
-    {
-      name: 'wearshop-products',
-      // Solo persistir si hay productos, no arrays vacíos
-      partialize: (state) => ({
-        products: state.products.length > 0 ? state.products : [],
-      }),
     }
-  )
 );
 
 export default useProductsStore;

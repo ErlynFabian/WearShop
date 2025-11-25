@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import Hero from '../components/Hero';
 import Categories from '../components/Categories';
 import ProductGrid from '../components/ProductGrid';
@@ -6,7 +7,9 @@ import useProductsStore from '../context/productsStore';
 
 const Home = () => {
   const { products } = useProductsStore();
-  const featuredProducts = products.filter(p => p.featured).slice(0, 8);
+  const featuredProducts = useMemo(() => {
+    return products.filter(p => p.featured).slice(0, 8);
+  }, [products]);
 
   return (
     <div>

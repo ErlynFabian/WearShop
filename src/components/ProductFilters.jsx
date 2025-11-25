@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiFilter, FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -8,16 +8,24 @@ const ProductFilters = ({
   showSizeFilter = true,
   showColorFilter = true,
   showPriceFilter = true,
-  showSortFilter = true
+  showSortFilter = true,
+  initialFilters = null
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState(initialFilters || {
     minPrice: '',
     maxPrice: '',
     sizes: [],
     colors: [],
     sortBy: 'default' // default, price-asc, price-desc, name-asc, name-desc
   });
+
+  // Sincronizar con filtros externos si se proporcionan
+  useEffect(() => {
+    if (initialFilters) {
+      setFilters(initialFilters);
+    }
+  }, [initialFilters]);
 
   // Obtener todas las tallas y colores únicos de los productos
   const allSizes = [...new Set(products.flatMap(p => p.sizes || []))].sort();

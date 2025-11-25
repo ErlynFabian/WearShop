@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartSidebar from './components/CartSidebar';
 import ScrollToTop from './components/ScrollToTop';
+import Chatbot from './components/Chatbot';
 import { useLoadData } from './hooks/useLoadData';
 import Home from './pages/Home';
 import Hombre from './pages/Hombre';
@@ -15,6 +16,9 @@ import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import ReturnsPolicy from './pages/ReturnsPolicy';
+import Envios from './pages/Envios';
+import CalculadoraTallas from './pages/CalculadoraTallas';
+import FAQ from './pages/FAQ';
 import SearchResults from './pages/SearchResults';
 import Login from './pages/admin/Login';
 import AdminLayout from './components/admin/AdminLayout';
@@ -29,6 +33,7 @@ import SalesManager from './pages/admin/SalesManager';
 import CreateSale from './pages/admin/CreateSale';
 import EditSale from './pages/admin/EditSale';
 import Notifications from './pages/admin/Notifications';
+import ContactMessages from './pages/admin/ContactMessages';
 
 function App() {
   useLoadData();
@@ -36,6 +41,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <Chatbot />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={
@@ -141,6 +147,36 @@ function App() {
                     <CartSidebar />
                   </div>
                 } />
+                <Route path="/envios" element={
+                  <div className="min-h-screen flex flex-col">
+                    <Navbar />
+                    <main className="flex-grow">
+                      <Envios />
+                    </main>
+                    <Footer />
+                    <CartSidebar />
+                  </div>
+                } />
+                <Route path="/calculadora-tallas" element={
+                  <div className="min-h-screen flex flex-col">
+                    <Navbar />
+                    <main className="flex-grow">
+                      <CalculadoraTallas />
+                    </main>
+                    <Footer />
+                    <CartSidebar />
+                  </div>
+                } />
+                <Route path="/faq" element={
+                  <div className="min-h-screen flex flex-col">
+                    <Navbar />
+                    <main className="flex-grow">
+                      <FAQ />
+                    </main>
+                    <Footer />
+                    <CartSidebar />
+                  </div>
+                } />
                 <Route path="/buscar" element={
                   <div className="min-h-screen flex flex-col">
                     <Navbar />
@@ -182,6 +218,7 @@ function App() {
                   <Route path="sales/create" element={<CreateSale />} />
                   <Route path="sales/edit/:id" element={<EditSale />} />
                   <Route path="notifications" element={<Notifications />} />
+                  <Route path="contact-messages" element={<ContactMessages />} />
                 </Route>
       </Routes>
     </Router>

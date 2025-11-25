@@ -5,6 +5,7 @@ import { salesService } from '../../services/salesService';
 import useProductsStore from '../../context/productsStore';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import AlertModal from '../../components/admin/AlertModal';
+import { formatPrice } from '../../utils/formatPrice';
 
 const SalesManager = () => {
   const { products } = useProductsStore();
@@ -62,12 +63,7 @@ const SalesManager = () => {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-DO', {
-      style: 'currency',
-      currency: 'DOP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+    return formatPrice(amount);
   };
 
   const formatDate = (dateString) => {
@@ -95,8 +91,10 @@ const SalesManager = () => {
           label: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
           sales: [],
           total: 0,
+          totalProfit: 0,
           completed: 0,
           completedTotal: 0,
+          completedProfit: 0,
           pending: 0,
           cancelled: 0
         };
@@ -104,10 +102,12 @@ const SalesManager = () => {
       
       grouped[monthKey].sales.push(sale);
       grouped[monthKey].total += parseFloat(sale.total || 0);
+      grouped[monthKey].totalProfit += parseFloat(sale.profit || 0);
       
       if (sale.status === 'completed') {
         grouped[monthKey].completed++;
         grouped[monthKey].completedTotal += parseFloat(sale.total || 0);
+        grouped[monthKey].completedProfit += parseFloat(sale.profit || 0);
       } else if (sale.status === 'pending') {
         grouped[monthKey].pending++;
       } else if (sale.status === 'cancelled') {
@@ -165,6 +165,10 @@ const SalesManager = () => {
     .filter(sale => sale.status === 'completed')
     .reduce((sum, sale) => sum + parseFloat(sale.total || 0), 0);
 
+  const totalProfit = filteredSales
+    .filter(sale => sale.status === 'completed')
+    .reduce((sum, sale) => sum + parseFloat(sale.profit || 0), 0);
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -190,15 +194,15 @@ const SalesManager = () => {
             <span>Volver a meses</span>
           </button>
         )}
-        <div className="flex items-center justify-between">
-          <h2 className="text-5xl font-black text-black">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-black break-words">
             {selectedMonth ? salesByMonth.find(m => m.key === selectedMonth)?.label : 'Ventas'}
           </h2>
           <Link
             to="/admin/sales/create"
-            className="flex items-center space-x-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-6 py-3 rounded-lg font-medium hover:from-yellow-500 hover:to-amber-600 transition-all shadow-lg"
+            className="flex items-center justify-center space-x-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:from-yellow-500 hover:to-amber-600 transition-all shadow-lg whitespace-nowrap text-sm sm:text-base"
           >
-            <FiPlus className="w-5 h-5" />
+            <FiPlus className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
             <span>Registrar Venta</span>
           </Link>
         </div>
@@ -262,11 +266,17 @@ const SalesManager = () => {
                       <span className="text-lg font-bold text-red-600">{month.cancelled}</span>
                     </div>
                     
-                    <div className="pt-3 border-t border-gray-200">
+                    <div className="pt-3 border-t border-gray-200 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-700">Total Ingresos</span>
                         <span className="text-xl font-black text-black">
                           {formatCurrency(month.completedTotal)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-green-700">Ganancias</span>
+                        <span className="text-xl font-black text-green-600">
+                          {formatCurrency(month.completedProfit)}
                         </span>
                       </div>
                     </div>
@@ -280,38 +290,42 @@ const SalesManager = () => {
 
       {/* Stats - Solo mostrar si hay un mes seleccionado */}
       {selectedMonth && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">Total de Ventas</p>
-            <p className="text-3xl font-black text-black">{filteredSales.length}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-6">
+          <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 border border-gray-200">
+            <p className="text-xs text-gray-600 mb-1 sm:mb-2">Total de Ventas</p>
+            <p className="text-xl sm:text-2xl md:text-3xl font-black text-black">{filteredSales.length}</p>
           </div>
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">Ventas Completadas</p>
-            <p className="text-3xl font-black text-green-600">
+          <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 border border-gray-200">
+            <p className="text-xs text-gray-600 mb-1 sm:mb-2">Ventas Completadas</p>
+            <p className="text-xl sm:text-2xl md:text-3xl font-black text-green-600">
               {filteredSales.filter(s => s.status === 'completed').length}
             </p>
           </div>
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">Total Ingresos</p>
-            <p className="text-3xl font-black text-black">{formatCurrency(totalSalesAmount)}</p>
+          <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 border border-gray-200">
+            <p className="text-xs text-gray-600 mb-1 sm:mb-2">Total Ingresos</p>
+            <p className="text-lg sm:text-xl md:text-2xl font-black text-black break-words">{formatCurrency(totalSalesAmount)}</p>
+          </div>
+          <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 border border-gray-200">
+            <p className="text-xs text-gray-600 mb-1 sm:mb-2">Ganancias</p>
+            <p className="text-lg sm:text-xl md:text-2xl font-black text-green-600 break-words">{formatCurrency(totalProfit)}</p>
           </div>
         </div>
       )}
 
       {/* Filters - Solo mostrar si hay un mes seleccionado */}
       {selectedMonth && (
-        <div className="mb-6 flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <div className="mb-6 flex flex-row gap-2 sm:gap-4">
+        <div className="relative flex-1">
+          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
           <input
             type="text"
-            placeholder="Buscar por producto, cliente, teléfono o email..."
+            placeholder="Buscar por producto, cliente, teléfono..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+            className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm sm:text-base"
           />
         </div>
         <select
@@ -320,7 +334,7 @@ const SalesManager = () => {
             setStatusFilter(e.target.value);
             setCurrentPage(1);
           }}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+          className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm sm:text-base flex-shrink-0"
         >
           <option value="all">Todos los estados</option>
           <option value="pending">Pendiente</option>
@@ -330,32 +344,111 @@ const SalesManager = () => {
       </div>
       )}
 
-      {/* Sales Table - Solo mostrar si hay un mes seleccionado */}
+      {/* Sales Cards - Mobile - Solo mostrar si hay un mes seleccionado */}
       {selectedMonth && (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-          <table className="w-full">
+        <div className="md:hidden space-y-4">
+          {paginatedSales.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center text-gray-500">
+              No se encontraron ventas
+            </div>
+          ) : (
+            paginatedSales.map((sale) => (
+              <div
+                key={sale.id}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-bold text-gray-900 truncate mb-1">
+                        {sale.product_name}
+                      </h3>
+                      <p className="text-xs text-gray-500 mb-2">
+                        {formatDate(sale.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 ml-2">
+                      {getStatusBadge(sale.status)}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 pt-2 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">Cliente:</span>
+                      <span className="text-sm font-medium text-gray-900">{sale.customer_name || 'N/A'}</span>
+                    </div>
+                    {sale.customer_phone && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Teléfono:</span>
+                        <span className="text-sm text-gray-900">{sale.customer_phone}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">Cantidad:</span>
+                      <span className="text-sm font-medium text-gray-900">{sale.quantity}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <span className="text-sm font-bold text-gray-700">Total:</span>
+                      <span className="text-lg font-black text-black">{formatCurrency(sale.total)}</span>
+                    </div>
+                    {sale.profit !== undefined && sale.profit !== null && (
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-xs font-medium text-green-700">Ganancia:</span>
+                        <span className="text-sm font-bold text-green-600">{formatCurrency(sale.profit)}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                    <Link
+                      to={`/admin/sales/edit/${sale.id}`}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <FiEdit className="w-4 h-4" />
+                    </Link>
+                    <button
+                      onClick={(e) => handleDeleteClick(sale.id, e)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <FiTrash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Sales Table - Desktop - Solo mostrar si hay un mes seleccionado */}
+      {selectedMonth && (
+      <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="max-h-[400px] overflow-y-auto">
+          <table className="w-full table-fixed">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[12%] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[15%] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Producto
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[15%] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cliente
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cantidad
+                <th className="w-[8%] px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cant.
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[12%] px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Total
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[12%] px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ganancia
+                </th>
+                <th className="w-[12%] px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[14%] px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
@@ -363,47 +456,59 @@ const SalesManager = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedSales.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     No se encontraron ventas
                   </td>
                 </tr>
               ) : (
                 paginatedSales.map((sale) => (
                   <tr key={sale.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(sale.created_at)}
+                    <td className="px-3 py-3 text-xs text-gray-900 truncate">
+                      {new Date(sale.created_at).toLocaleDateString('es-DO', { 
+                        day: '2-digit', 
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{sale.product_name}</div>
+                    <td className="px-3 py-3">
+                      <div className="text-xs font-medium text-gray-900 truncate" title={sale.product_name}>
+                        {sale.product_name}
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{sale.customer_name || 'N/A'}</div>
+                    <td className="px-3 py-3">
+                      <div className="text-xs text-gray-900 truncate" title={sale.customer_name || 'N/A'}>
+                        {sale.customer_name || 'N/A'}
+                      </div>
                       {sale.customer_phone && (
-                        <div className="text-xs text-gray-500">{sale.customer_phone}</div>
+                        <div className="text-xs text-gray-500 truncate">{sale.customer_phone}</div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 py-3 text-center text-xs text-gray-900">
                       {sale.quantity}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-3 py-3 text-right text-xs font-medium text-gray-900">
                       {formatCurrency(sale.total)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-3 text-right text-xs font-medium text-green-600">
+                      {formatCurrency(sale.profit || 0)}
+                    </td>
+                    <td className="px-3 py-3 text-center">
                       {getStatusBadge(sale.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
+                    <td className="px-3 py-3 text-right">
+                      <div className="flex items-center justify-end space-x-1">
                         <Link
                           to={`/admin/sales/edit/${sale.id}`}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
-                          <FiEdit className="w-5 h-5" />
+                          <FiEdit className="w-4 h-4" />
                         </Link>
                         <button
                           onClick={(e) => handleDeleteClick(sale.id, e)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
-                          <FiTrash2 className="w-5 h-5" />
+                          <FiTrash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -414,7 +519,7 @@ const SalesManager = () => {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination - Desktop */}
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <div className="text-sm text-gray-700">
@@ -440,6 +545,33 @@ const SalesManager = () => {
             </div>
           </div>
         )}
+      </div>
+      )}
+
+      {/* Pagination - Mobile */}
+      {selectedMonth && totalPages > 1 && (
+        <div className="md:hidden mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
+            Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
+            {Math.min(currentPage * itemsPerPage, filteredSales.length)} de{' '}
+            {filteredSales.length} ventas
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
+          </div>
       </div>
       )}
 
