@@ -14,8 +14,10 @@ const AdminLayout = () => {
       '/admin/products': 'Productos',
       '/admin/categories': 'Categorías',
       '/admin/product-types': 'Tipos de Prenda',
+      '/admin/reports': 'Reportes',
       '/admin/blog': 'Blog',
       '/admin/media': 'Medios',
+      '/admin/settings': 'Configuración',
     };
     return titles[location.pathname] || 'Panel de Administración';
   };

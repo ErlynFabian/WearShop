@@ -3,14 +3,22 @@ import { Link, useLocation } from 'react-router-dom';
 import { FiSearch, FiShoppingCart } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import useCartStore from '../context/cartStore';
+import useSiteConfigStore from '../context/siteConfigStore';
 import SearchModal from './SearchModal';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { openCart, items } = useCartStore();
+  const config = useSiteConfigStore((state) => state.config);
+  const siteName = config?.site_name || 'WearShop';
   const location = useLocation();
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+  
+  // Debug: Log cuando cambia el config
+  useEffect(() => {
+    console.log('Navbar - Config changed:', config);
+  }, [config]);
   
   const isActive = (path) => {
     if (path === '/') {
@@ -39,7 +47,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center space-x-2">
             <motion.span
               whileHover={{ scale: 1.05 }}
               className="text-2xl font-bold tracking-tight bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 bg-clip-text text-transparent drop-shadow-sm"
@@ -47,10 +55,10 @@ const Navbar = () => {
                 backgroundImage: 'linear-gradient(to right, #facc15, #fbbf24, #f59e0b)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                backgroundClip: 'text'
               }}
             >
-              WearShop
+              {siteName}
             </motion.span>
           </Link>
 

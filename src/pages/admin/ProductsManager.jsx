@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiStar } from 'react-icons/fi';
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiStar, FiFilter } from 'react-icons/fi';
 import useProductsStore from '../../context/productsStore';
 import useToastStore from '../../context/toastStore';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import ProductCardSkeleton from '../../components/admin/ProductCardSkeleton';
 import TableSkeleton from '../../components/skeletons/TableSkeleton';
 import { formatPrice } from '../../utils/formatPrice';
+import { filterProductsByStock, getStockStatus, getStockStatusColor, getStockStatusText, getCriticalStockProducts } from '../../utils/stockUtils';
 
 const ProductsManager = () => {
   const { products, deleteProduct, toggleFeatured, loading, loadProducts } = useProductsStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // Asegurar que los productos se carguen al montar el componente
   useEffect(() => {
@@ -20,14 +22,39 @@ const ProductsManager = () => {
     };
     loadData();
   }, []); // Solo ejecutar una vez al montar
+
+  // Obtener filtro de stock desde URL
+  const stockFilterFromUrl = searchParams.get('stock');
+  const initialStockFilter = stockFilterFromUrl === 'critical' ? 'critical' : 'all';
+  
   const [searchTerm, setSearchTerm] = useState('');
+  const [stockFilter, setStockFilter] = useState(initialStockFilter);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, productId: null });
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Aplicar filtro de stock desde URL al montar
+  useEffect(() => {
+    if (stockFilterFromUrl === 'critical') {
+      setStockFilter('critical');
+    }
+  }, [stockFilterFromUrl]);
+
+  // Filtrar productos por búsqueda y stock
+  const filteredProducts = useMemo(() => {
+    let filtered = products.filter(product =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Aplicar filtro de stock
+    if (stockFilter === 'critical') {
+      filtered = getCriticalStockProducts(filtered);
+    } else if (stockFilter !== 'all') {
+      filtered = filterProductsByStock(filtered, stockFilter);
+    }
+
+    return filtered;
+  }, [products, searchTerm, stockFilter]);
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice(
@@ -66,21 +93,55 @@ const ProductsManager = () => {
         </Link>
       </div>
 
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Buscar productos..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-          />
+      {/* Search and Filters */}
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Buscar productos..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <FiFilter className="w-5 h-5 text-gray-600" />
+            <select
+              value={stockFilter}
+              onChange={(e) => {
+                setStockFilter(e.target.value);
+                setCurrentPage(1);
+                // Actualizar URL si es crítico
+                if (e.target.value === 'critical') {
+                  setSearchParams({ stock: 'critical' });
+                } else {
+                  setSearchParams({});
+                }
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+            >
+              <option value="all">Todos los productos</option>
+              <option value="in_stock">En Stock</option>
+              <option value="low_stock">Bajo Stock</option>
+              <option value="out_of_stock">Agotados</option>
+              <option value="critical">Críticos (Bajo + Agotados)</option>
+            </select>
+          </div>
         </div>
+        {stockFilter !== 'all' && (
+          <div className="text-sm text-gray-600">
+            Mostrando {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'} 
+            {stockFilter === 'critical' && ' con inventario crítico'}
+            {stockFilter === 'low_stock' && ' con bajo stock'}
+            {stockFilter === 'out_of_stock' && ' agotados'}
+            {stockFilter === 'in_stock' && ' en stock'}
+          </div>
+        )}
       </div>
 
       {/* Products Cards - Mobile */}
@@ -133,6 +194,9 @@ const ProductsManager = () => {
                         En Oferta
                       </span>
                     )}
+                    <span className={`px-2 py-1 text-xs font-medium rounded border ${getStockStatusColor(product.stock || 0)}`}>
+                      {getStockStatusText(product.stock || 0)} ({product.stock || 0})
+                    </span>
                     <div className="flex items-center gap-2">
                       {product.onSale && product.salePrice ? (
                         <>
@@ -190,6 +254,9 @@ const ProductsManager = () => {
                   Precio
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Stock
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Oferta
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -233,7 +300,7 @@ const ProductsManager = () => {
                 ))
               ) : paginatedProducts.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     No se encontraron productos
                   </td>
                 </tr>
@@ -270,6 +337,14 @@ const ProductsManager = () => {
                           {formatPrice(product.price)}
                         </div>
                       )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className={`px-2 py-1 text-xs font-medium rounded border ${getStockStatusColor(product.stock || 0)}`}>
+                        {product.stock || 0}
+                      </span>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {getStockStatusText(product.stock || 0)}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {product.onSale ? (

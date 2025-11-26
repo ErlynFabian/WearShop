@@ -1,7 +1,17 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import useSiteConfigStore from '../context/siteConfigStore';
 
 const Hero = () => {
+  const config = useSiteConfigStore((state) => state.config);
+  const siteName = config?.site_name || 'WearShop';
+  const siteDescription = config?.site_description || 'Estilo que define tu personalidad. Moda que transforma tu día.';
+  
+  // Debug: Log cuando cambia el config
+  useEffect(() => {
+    console.log('Hero - Config changed:', config);
+  }, [config]);
   return (
     <div className="relative h-screen flex items-center justify-center overflow-hidden bg-black">
       {/* Background Image */}
@@ -21,16 +31,18 @@ const Hero = () => {
           transition={{ duration: 0.8 }}
           className="text-6xl md:text-8xl lg:text-9xl font-black text-white mb-6 tracking-tight"
         >
-          WEAR SHOP
+          {siteName.toUpperCase()}
         </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-xl md:text-2xl text-gray-300 mb-12 font-light"
-        >
-          Estilo que define tu personalidad. Moda que transforma tu día.
-        </motion.p>
+        {siteDescription && (
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-xl md:text-2xl text-gray-300 mb-12 font-light"
+          >
+            {siteDescription}
+          </motion.p>
+        )}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

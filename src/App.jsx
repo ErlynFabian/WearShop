@@ -42,6 +42,8 @@ import ContactMessages from './pages/admin/ContactMessages';
 import BlogManager from './pages/admin/BlogManager';
 import CreateBlogPost from './pages/admin/CreateBlogPost';
 import EditBlogPost from './pages/admin/EditBlogPost';
+import Reports from './pages/admin/Reports';
+import SiteSettings from './pages/admin/SiteSettings';
 
 function App() {
   useLoadData();
@@ -251,6 +253,8 @@ function App() {
                   <Route path="blog" element={<BlogManager />} />
                   <Route path="blog/create" element={<CreateBlogPost />} />
                   <Route path="blog/edit/:id" element={<EditBlogPost />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="settings" element={<SiteSettings />} />
                   <Route path="notifications" element={<Notifications />} />
                   <Route path="contact-messages" element={<ContactMessages />} />
                 </Route>

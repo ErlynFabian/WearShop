@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import useSiteConfigStore from '../context/siteConfigStore';
 
 const SEO = ({ 
   title, 
@@ -11,9 +12,10 @@ const SEO = ({
   type = 'website' 
 }) => {
   const location = useLocation();
-  const siteName = 'WearShop';
+  const siteName = useSiteConfigStore((state) => state.config?.site_name) || 'WearShop';
+  const siteDescription = useSiteConfigStore((state) => state.config?.site_description);
   const defaultTitle = `${siteName} - Moda y Estilo | Tienda Online`;
-  const defaultDescription = 'Descubre las últimas tendencias en moda. Ropa para hombres, mujeres y accesorios. Envíos nacionales e internacionales.';
+  const defaultDescription = siteDescription || 'Descubre las últimas tendencias en moda. Ropa para hombres, mujeres y accesorios. Envíos nacionales e internacionales.';
   const defaultImage = 'https://static.zara.net/assets/public/41c4/d194/c9a34b0d8304/0d227959d347/AGORA_MALL_1438/AGORA_MALL_1438.jpg?ts=1750260205481';
   
   // Obtener URLs de forma segura
@@ -25,10 +27,10 @@ const SEO = ({
   const seoImage = image || defaultImage;
   const seoUrl = url || currentUrl;
 
-  // Forzar actualización del título cuando cambia la ruta
+  // Forzar actualización del título cuando cambia la ruta o el nombre del sitio
   useEffect(() => {
     document.title = seoTitle;
-  }, [location.pathname, seoTitle]);
+  }, [location.pathname, seoTitle, siteName]);
 
   return (
     <Helmet>

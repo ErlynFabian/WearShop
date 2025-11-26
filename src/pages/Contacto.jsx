@@ -1,10 +1,25 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SEO from '../components/SEO';
 import useToastStore from '../context/toastStore';
+import useSiteConfigStore from '../context/siteConfigStore';
 import { contactService } from '../services/contactService';
+import { FiPhone, FiMail, FiMapPin, FiClock } from 'react-icons/fi';
 
 const Contacto = () => {
+  // Suscribirse al objeto completo para detectar cualquier cambio
+  const config = useSiteConfigStore((state) => state.config);
+  const contactPhone = config?.contact_phone || '+1 (829) 965-7361';
+  const contactEmail = config?.contact_email || 'contacto@wearshop.com';
+  const contactAddress = config?.contact_address || 'San Isidro, Santo Domingo Este';
+  const businessHours = config?.business_hours;
+  
+  // Debug: Log cuando cambia el config
+  useEffect(() => {
+    console.log('Contacto - Config changed:', config);
+    console.log('Contacto - Contact info:', { contactPhone, contactEmail, contactAddress });
+  }, [config, contactPhone, contactEmail, contactAddress]);
+  
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -247,20 +262,74 @@ const Contacto = () => {
           >
             <div>
               <h3 className="text-2xl font-bold text-black mb-4">Información de contacto</h3>
-              <div className="space-y-4 text-gray-700">
-                <p>
-                  <strong>Dirección:</strong><br />
-                  San Isidro,<br />
-                  Santo Domingo Este
-                </p>
-                <p>
-                  <strong>Teléfono:</strong><br />
-                  +1 (829) 965-7361
-                </p>
-                <p>
-                  <strong>Email:</strong><br />
-                  contacto@wearshop.com
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-gray-700">
+                {/* Columna Izquierda: Información de contacto */}
+                <div className="space-y-4">
+                  {contactAddress && (
+                    <div className="flex items-start space-x-3">
+                      <FiMapPin className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <strong className="text-black">Dirección:</strong><br />
+                        <span className="text-gray-700 whitespace-pre-line">{contactAddress}</span>
+                      </div>
+                    </div>
+                  )}
+                  {contactPhone && (
+                    <div className="flex items-start space-x-3">
+                      <FiPhone className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <strong className="text-black">Teléfono:</strong><br />
+                        <a href={`tel:${contactPhone.replace(/[^0-9+]/g, '')}`} className="text-gray-700 hover:text-black transition-colors">
+                          {contactPhone}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  {contactEmail && (
+                    <div className="flex items-start space-x-3">
+                      <FiMail className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <strong className="text-black">Email:</strong><br />
+                        <a href={`mailto:${contactEmail}`} className="text-gray-700 hover:text-black transition-colors">
+                          {contactEmail}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Columna Derecha: Horarios */}
+                {businessHours && (
+                  <div className="flex items-start space-x-3">
+                    <FiClock className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+                    <div className="flex-1">
+                      <strong className="text-black">Horarios de Atención:</strong><br />
+                      <div className="text-gray-700 mt-1 space-y-1">
+                        {Object.entries(businessHours).map(([day, hours]) => {
+                          const dayNames = {
+                            monday: 'Lunes',
+                            tuesday: 'Martes',
+                            wednesday: 'Miércoles',
+                            thursday: 'Jueves',
+                            friday: 'Viernes',
+                            saturday: 'Sábado',
+                            sunday: 'Domingo'
+                          };
+                          return (
+                            <div key={day} className="text-sm">
+                              <span className="font-medium">{dayNames[day]}:</span>{' '}
+                              {hours.closed ? (
+                                <span className="text-gray-500">Cerrado</span>
+                              ) : (
+                                <span>{hours.open} - {hours.close}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

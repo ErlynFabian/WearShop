@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import StatsSkeleton from '../../components/skeletons/StatsSkeleton';
 import ActivitySkeleton from '../../components/skeletons/ActivitySkeleton';
-import { FiPackage, FiFolder, FiDollarSign, FiTrendingUp, FiMail } from 'react-icons/fi';
+import { FiPackage, FiFolder, FiDollarSign, FiTrendingUp, FiMail, FiAlertTriangle, FiXCircle } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import useProductsStore from '../../context/productsStore';
 import useCategoriesStore from '../../context/categoriesStore';
@@ -9,6 +9,7 @@ import { activitiesService } from '../../services/activitiesService';
 import { salesService } from '../../services/salesService';
 import { contactService } from '../../services/contactService';
 import { formatPrice } from '../../utils/formatPrice';
+import { getCriticalStockProducts, getOutOfStockProducts, getLowStockProducts, getStockStatus, getStockStatusColor } from '../../utils/stockUtils';
 
 const Dashboard = () => {
   const { products } = useProductsStore();
@@ -85,6 +86,11 @@ const Dashboard = () => {
   const formatCurrency = (amount) => {
     return formatPrice(amount);
   };
+
+  // Calcular productos críticos de inventario
+  const criticalProducts = useMemo(() => getCriticalStockProducts(products), [products]);
+  const outOfStockProducts = useMemo(() => getOutOfStockProducts(products), [products]);
+  const lowStockProducts = useMemo(() => getLowStockProducts(products), [products]);
 
   const stats = [
     {
@@ -196,6 +202,105 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Inventario Crítico */}
+      {criticalProducts.length > 0 && (
+        <div className="bg-white rounded-lg p-6 border border-gray-200 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-lg bg-red-100">
+                <FiAlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-black">Inventario Crítico</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {criticalProducts.length} {criticalProducts.length === 1 ? 'producto requiere' : 'productos requieren'} atención
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/admin/products?stock=critical"
+              className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-6 py-2.5 rounded-lg font-medium hover:from-yellow-500 hover:to-amber-600 transition-all shadow-lg"
+            >
+              Ver todos
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Productos Agotados */}
+            {outOfStockProducts.length > 0 && (
+              <div>
+                <div className="flex items-center space-x-2 mb-4">
+                  <FiXCircle className="w-5 h-5 text-red-600" />
+                  <h4 className="text-lg font-bold text-black">Agotados</h4>
+                  <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">
+                    {outOfStockProducts.length}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {outOfStockProducts.slice(0, 5).map((product) => (
+                    <div key={product.id} className="flex items-center space-x-4 pb-3 border-b border-gray-200 last:border-0">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-12 h-12 object-cover rounded-lg"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-black truncate">{product.name}</p>
+                        <p className="text-xs text-gray-500">Stock: 0</p>
+                      </div>
+                    </div>
+                  ))}
+                  {outOfStockProducts.length > 5 && (
+                    <Link
+                      to="/admin/products?stock=out_of_stock"
+                      className="block text-center text-sm text-gray-600 hover:text-black transition-colors pt-2"
+                    >
+                      Ver {outOfStockProducts.length - 5} más →
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Productos con Bajo Stock */}
+            {lowStockProducts.length > 0 && (
+              <div>
+                <div className="flex items-center space-x-2 mb-4">
+                  <FiAlertTriangle className="w-5 h-5 text-yellow-600" />
+                  <h4 className="text-lg font-bold text-black">Bajo Stock</h4>
+                  <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">
+                    {lowStockProducts.length}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {lowStockProducts.slice(0, 5).map((product) => (
+                    <div key={product.id} className="flex items-center space-x-4 pb-3 border-b border-gray-200 last:border-0">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-12 h-12 object-cover rounded-lg"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-black truncate">{product.name}</p>
+                        <p className="text-xs text-gray-500">Stock: {product.stock || 0}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {lowStockProducts.length > 5 && (
+                    <Link
+                      to="/admin/products?stock=low_stock"
+                      className="block text-center text-sm text-gray-600 hover:text-black transition-colors pt-2"
+                    >
+                      Ver {lowStockProducts.length - 5} más →
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Mensajes de Contacto */}
       {unreadMessages > 0 && (

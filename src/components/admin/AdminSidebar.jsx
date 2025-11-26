@@ -11,7 +11,9 @@ import {
   FiBell,
   FiMail,
   FiFileText,
-  FiX
+  FiSettings,
+  FiX,
+  FiBarChart2
 } from 'react-icons/fi';
 import useAuthStore from '../../context/authStore';
 import { contactService } from '../../services/contactService';
@@ -86,18 +88,20 @@ const AdminSidebar = ({ isOpen = false, onClose }) => {
     { path: '/admin/categories', icon: FiFolder, label: 'Categorías' },
     { path: '/admin/product-types', icon: FiShoppingBag, label: 'Tipos de Prenda' },
     { path: '/admin/sales', icon: FiDollarSign, label: 'Ventas' },
+    { path: '/admin/reports', icon: FiBarChart2, label: 'Reportes' },
     { path: '/admin/blog', icon: FiFileText, label: 'Blog' },
     { path: '/admin/notifications', icon: FiBell, label: 'Notificaciones' },
     { path: '/admin/contact-messages', icon: FiMail, label: 'Mensajes de Contacto' },
+    { path: '/admin/settings', icon: FiSettings, label: 'Configuración' },
   ];
 
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="border-b border-gray-200 relative" style={{ padding: '1rem 1.5rem', height: '4rem', display: 'flex', alignItems: 'center' }}>
+      <div className="border-b border-gray-200 relative" style={{ padding: '0.75rem 1rem', height: '3.5rem', display: 'flex', alignItems: 'center' }}>
         <Link to="/admin" onClick={handleLinkClick} className="flex items-center space-x-2">
           <span 
-            className="text-xl font-bold tracking-tight"
+            className="text-base font-bold tracking-tight"
             style={{
               backgroundImage: 'linear-gradient(to right, #facc15, #fbbf24, #f59e0b)',
               WebkitBackgroundClip: 'text',
@@ -112,19 +116,23 @@ const AdminSidebar = ({ isOpen = false, onClose }) => {
         {onClose && (
           <button
             onClick={onClose}
-            className="lg:hidden absolute right-4 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden absolute right-3 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Cerrar menú"
           >
-            <FiX className="w-5 h-5 text-gray-600" />
+            <FiX className="w-4 h-4 text-gray-600" />
           </button>
         )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+          // Para el Dashboard, solo activo si es exactamente /admin o /admin/
+          // Para otros items, activo si coincide exactamente o empieza con el path + /
+          const isActive = item.path === '/admin' 
+            ? (location.pathname === '/admin' || location.pathname === '/admin/')
+            : (location.pathname === item.path || location.pathname.startsWith(item.path + '/'));
           const showBadge = item.path === '/admin/contact-messages' && unreadMessagesCount > 0;
           
           return (
@@ -132,18 +140,18 @@ const AdminSidebar = ({ isOpen = false, onClose }) => {
               key={item.path}
               to={item.path}
               onClick={handleLinkClick}
-              className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+              className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
                 isActive
                   ? 'bg-gray-100 text-black font-medium'
                   : 'text-gray-700 hover:bg-gray-50 hover:text-black'
               }`}
             >
-              <div className="flex items-center space-x-3">
-              <Icon className="w-5 h-5" />
-              <span className="text-sm font-medium">{item.label}</span>
+              <div className="flex items-center space-x-2.5">
+              <Icon className="w-4 h-4" />
+              <span className="text-xs font-medium">{item.label}</span>
               </div>
               {showBadge && (
-                <span className="min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5">
+                <span className="min-w-[18px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
                   {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                 </span>
               )}
@@ -153,13 +161,13 @@ const AdminSidebar = ({ isOpen = false, onClose }) => {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-2 border-t border-gray-200">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-red-600 transition-colors"
+          className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-red-600 transition-colors"
         >
-          <FiLogOut className="w-5 h-5" />
-          <span className="text-sm font-medium">Cerrar Sesión</span>
+          <FiLogOut className="w-4 h-4" />
+          <span className="text-xs font-medium">Cerrar Sesión</span>
         </button>
       </div>
     </>
