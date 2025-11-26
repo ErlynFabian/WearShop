@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import SEO from '../components/SEO';
+import useToastStore from '../context/toastStore';
 import { contactService } from '../services/contactService';
 
 const Contacto = () => {
@@ -64,6 +66,7 @@ const Contacto = () => {
       });
       setSubmitStatus('success');
       setFormData({ name: '', phone: '', message: '' });
+      useToastStore.getState().success('¡Mensaje enviado correctamente! Te responderemos pronto.');
       
       // Limpiar el mensaje de éxito después de 5 segundos
       setTimeout(() => {
@@ -72,9 +75,9 @@ const Contacto = () => {
     } catch (error) {
       console.error('Error al enviar mensaje:', error);
       setSubmitStatus('error');
-      setErrorMessage(
-        error.message || 'Hubo un error al enviar tu mensaje. Por favor, intenta nuevamente.'
-      );
+      const errorMsg = error.message || 'Hubo un error al enviar tu mensaje. Por favor, intenta nuevamente.';
+      setErrorMessage(errorMsg);
+      useToastStore.getState().error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -108,6 +111,11 @@ const Contacto = () => {
 
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title="Contacto"
+        description="Contáctanos para consultas, pedidos o cualquier pregunta. Estamos aquí para ayudarte. WhatsApp: +1 (829) 965-7361. Horario de atención: Lunes a Sábado 9:00 AM - 6:00 PM."
+        keywords="contacto, soporte, ayuda, WhatsApp, atención al cliente, consultas"
+      />
       <div className="max-w-7xl mx-auto">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft, FiSave, FiX } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import useProductsStore from '../../context/productsStore';
+import useToastStore from '../../context/toastStore';
 import useCategoriesStore from '../../context/categoriesStore';
 import useProductTypesStore from '../../context/productTypesStore';
 
@@ -139,6 +140,7 @@ const EditProduct = () => {
       onSale: formData.onSale || false,
       salePrice: formData.onSale && formData.salePrice ? parseFloat(formData.salePrice) : null
     });
+    useToastStore.getState().success(`Producto "${formData.name}" actualizado correctamente`);
     navigate('/admin/products');
   };
 

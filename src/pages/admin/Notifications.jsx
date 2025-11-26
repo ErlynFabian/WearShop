@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import NotificationSkeleton from '../../components/skeletons/NotificationSkeleton';
 import { Link } from 'react-router-dom';
 import { FiBell, FiCheck, FiCheckCircle, FiTrash2, FiFilter, FiPackage, FiDollarSign, FiAlertTriangle, FiShoppingCart, FiInfo, FiMail, FiFolder } from 'react-icons/fi';
 import { notificationsService } from '../../services/notificationsService';
@@ -252,8 +253,14 @@ const Notifications = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Cargando notificaciones...</p>
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div>
+            <div className="h-12 bg-gray-200 rounded w-48 mb-2 animate-pulse-fast" />
+            <div className="h-5 bg-gray-200 rounded w-64 animate-pulse-fast" />
+          </div>
+        </div>
+        <NotificationSkeleton count={8} />
       </div>
     );
   }

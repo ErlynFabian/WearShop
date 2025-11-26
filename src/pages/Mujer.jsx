@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ProductGrid from '../components/ProductGrid';
+import ProductGridSkeleton from '../components/ProductGridSkeleton';
 import ProductFilters from '../components/ProductFilters';
+import SEO from '../components/SEO';
 import useProductsStore from '../context/productsStore';
 import useProductTypesStore from '../context/productTypesStore';
 
@@ -129,6 +131,18 @@ const Mujer = () => {
 
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title="Ropa para Mujeres"
+        description="Explora nuestra colección de ropa para mujeres. Vestidos, blusas, pantalones y más. Elegancia y moda para ella. Envíos nacionales e internacionales."
+        keywords="ropa para mujeres, moda femenina, vestidos, blusas, pantalones, estilo femenino, ropa mujer"
+      />
+      {loading ? (
+        <div className="max-w-7xl mx-auto">
+          <div className="h-16 bg-gray-200 rounded mb-4 w-64 animate-pulse-fast" />
+          <div className="h-6 bg-gray-200 rounded mb-8 w-48 animate-pulse-fast" />
+          <ProductGridSkeleton count={8} />
+        </div>
+      ) : (
       <div className="max-w-7xl mx-auto">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -273,6 +287,7 @@ const Mujer = () => {
           )
         )}
       </div>
+      )}
     </div>
   );
 };

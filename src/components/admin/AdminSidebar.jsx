@@ -10,6 +10,7 @@ import {
   FiDollarSign,
   FiBell,
   FiMail,
+  FiFileText,
   FiX
 } from 'react-icons/fi';
 import useAuthStore from '../../context/authStore';
@@ -85,6 +86,7 @@ const AdminSidebar = ({ isOpen = false, onClose }) => {
     { path: '/admin/categories', icon: FiFolder, label: 'Categorías' },
     { path: '/admin/product-types', icon: FiShoppingBag, label: 'Tipos de Prenda' },
     { path: '/admin/sales', icon: FiDollarSign, label: 'Ventas' },
+    { path: '/admin/blog', icon: FiFileText, label: 'Blog' },
     { path: '/admin/notifications', icon: FiBell, label: 'Notificaciones' },
     { path: '/admin/contact-messages', icon: FiMail, label: 'Mensajes de Contacto' },
   ];
@@ -122,7 +124,7 @@ const AdminSidebar = ({ isOpen = false, onClose }) => {
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
           const showBadge = item.path === '/admin/contact-messages' && unreadMessagesCount > 0;
           
           return (

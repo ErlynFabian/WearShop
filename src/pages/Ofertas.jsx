@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ProductGrid from '../components/ProductGrid';
+import ProductGridSkeleton from '../components/ProductGridSkeleton';
+import SEO from '../components/SEO';
 import useProductsStore from '../context/productsStore';
 import useProductTypesStore from '../context/productTypesStore';
 
@@ -61,6 +63,18 @@ const Ofertas = () => {
 
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title="Ofertas y Descuentos"
+        description="Aprovecha nuestras mejores ofertas y descuentos. Productos de moda con precios especiales. No te pierdas estas promociones exclusivas."
+        keywords="ofertas, descuentos, promociones, rebajas, moda barata, ropa en oferta"
+      />
+      {loading ? (
+        <div className="max-w-7xl mx-auto">
+          <div className="h-16 bg-gray-200 rounded mb-4 w-64 animate-pulse-fast" />
+          <div className="h-6 bg-gray-200 rounded mb-8 w-48 animate-pulse-fast" />
+          <ProductGridSkeleton count={8} />
+        </div>
+      ) : (
       <div className="max-w-7xl mx-auto">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -130,6 +144,7 @@ const Ofertas = () => {
           <ProductGrid products={displayedProducts} />
         )}
       </div>
+      )}
     </div>
   );
 };

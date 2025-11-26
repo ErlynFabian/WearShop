@@ -1,26 +1,41 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiShoppingCart, FiTruck, FiShield, FiInfo } from 'react-icons/fi';
+import { FiArrowLeft, FiShoppingCart, FiTruck, FiShield, FiInfo, FiLink2 } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 import useProductsStore from '../context/productsStore';
 import useCartStore from '../context/cartStore';
+import useToastStore from '../context/toastStore';
+import useRecentlyViewedStore from '../context/recentlyViewedStore';
 import { formatPrice } from '../utils/formatPrice';
 import ProductGrid from '../components/ProductGrid';
+import SEO from '../components/SEO';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { products } = useProductsStore();
   const { addItem, openCart } = useCartStore();
+  const { addViewedProduct } = useRecentlyViewedStore();
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
 
   const product = products.find(p => p.id === parseInt(id));
 
+  // Registrar producto como visto cuando se carga
+  useEffect(() => {
+    if (product) {
+      addViewedProduct(product.id);
+    }
+  }, [product, addViewedProduct]);
+
   if (!product) {
     return (
       <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 text-center">
+        <SEO
+          title="Producto no encontrado"
+          description="El producto que buscas no está disponible."
+        />
         <p className="text-gray-600 mb-4">Producto no encontrado</p>
         <Link to="/" className="text-black hover:underline">
           Volver al inicio
@@ -28,6 +43,12 @@ const ProductDetail = () => {
       </div>
     );
   }
+
+  // Meta tags para SEO del producto
+  const productTitle = `${product.name} - ${formatPrice(product.onSale && product.salePrice ? product.salePrice : product.price)}`;
+  const productDescription = `${product.name}${product.description ? ` - ${product.description.substring(0, 150)}` : ''}. Categoría: ${product.category}. ${product.onSale ? '¡En oferta!' : ''}`;
+  const productKeywords = `${product.name}, ${product.category}, ${product.type || ''}, moda, ropa, ${product.onSale ? 'oferta, descuento' : ''}`;
+  const productUrl = typeof window !== 'undefined' ? `${window.location.origin}/producto/${product.id}` : '';
 
   const handleAddToCart = () => {
     addItem(product);
@@ -45,7 +66,17 @@ const ProductDetail = () => {
     // Usar formato directo de WhatsApp para que el mensaje aparezca correctamente
     const phoneNumber = '18299657361'; // +1 (829) 965-7361 sin formato
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.location.href = whatsappUrl;
+    window.open(whatsappUrl, '_blank');
+    useToastStore.getState().info('Abriendo WhatsApp...');
+  };
+
+  const handleCopyLink = () => {
+    const productUrl = `${window.location.origin}/producto/${product.id}`;
+    navigator.clipboard.writeText(productUrl).then(() => {
+      useToastStore.getState().success('Enlace del producto copiado al portapapeles');
+    }).catch(() => {
+      useToastStore.getState().error('Error al copiar el enlace');
+    });
   };
 
   // Verificar si se pueden seleccionar talla y color
@@ -86,6 +117,14 @@ const ProductDetail = () => {
 
   return (
     <div className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title={productTitle}
+        description={productDescription}
+        keywords={productKeywords}
+        image={product.image}
+        url={productUrl}
+        type="product"
+      />
       <div className="max-w-7xl mx-auto">
         {/* Back Button */}
         <button
@@ -224,6 +263,13 @@ const ProductDetail = () => {
               >
                 {isWhatsAppEnabled && <FaWhatsapp className="w-5 h-5" />}
                 <span>{getWhatsAppButtonText()}</span>
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="w-full border-2 border-gray-300 text-black py-3 px-6 font-medium text-base rounded-lg flex items-center justify-center space-x-2 hover:border-black transition-colors"
+              >
+                <FiLink2 className="w-5 h-5" />
+                <span>Copiar enlace</span>
               </button>
             </div>
 

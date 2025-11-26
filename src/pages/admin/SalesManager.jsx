@@ -6,6 +6,7 @@ import useProductsStore from '../../context/productsStore';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import AlertModal from '../../components/admin/AlertModal';
 import { formatPrice } from '../../utils/formatPrice';
+import TableSkeleton from '../../components/skeletons/TableSkeleton';
 
 const SalesManager = () => {
   const { products } = useProductsStore();
@@ -171,8 +172,29 @@ const SalesManager = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Cargando ventas...</p>
+      <div>
+        <div className="mb-8">
+          <div className="h-12 bg-gray-200 rounded w-64 mb-4 animate-pulse-fast" />
+          <div className="h-6 bg-gray-200 rounded w-48 animate-pulse-fast" />
+        </div>
+        <div className="mb-8">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-6 animate-pulse-fast" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="bg-white rounded-lg p-6 border border-gray-200">
+                <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse-fast" />
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse-fast" />
+                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse-fast" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

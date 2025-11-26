@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiX } from 'react-icons/fi';
+import { FiSearch, FiX, FiTrendingUp } from 'react-icons/fi';
 import useProductsStore from '../context/productsStore';
 import { formatPrice } from '../utils/formatPrice';
 
 const SearchModal = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const { products } = useProductsStore();
   const navigate = useNavigate();
   const inputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -18,13 +21,43 @@ const SearchModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // Generar sugerencias de autocompletado
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setResults([]);
+      setSuggestions([]);
+      setSelectedIndex(-1);
       return;
     }
 
     const searchLower = searchTerm.toLowerCase().trim();
+    
+    // Obtener todos los nombres, categorías y tipos únicos
+    const allNames = [...new Set(products.map(p => p.name))];
+    const allCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
+    const allTypes = [...new Set(products.map(p => p.type).filter(Boolean))];
+    
+    // Crear sugerencias basadas en coincidencias
+    const nameSuggestions = allNames
+      .filter(name => name.toLowerCase().includes(searchLower))
+      .slice(0, 3)
+      .map(name => ({ text: name, type: 'producto' }));
+    
+    const categorySuggestions = allCategories
+      .filter(cat => cat.toLowerCase().includes(searchLower))
+      .slice(0, 2)
+      .map(cat => ({ text: cat, type: 'categoría' }));
+    
+    const typeSuggestions = allTypes
+      .filter(type => type.toLowerCase().includes(searchLower))
+      .slice(0, 2)
+      .map(type => ({ text: type, type: 'tipo' }));
+    
+    // Combinar y limitar sugerencias
+    const allSuggestions = [...nameSuggestions, ...categorySuggestions, ...typeSuggestions].slice(0, 5);
+    setSuggestions(allSuggestions);
+
+    // Filtrar productos para resultados
     const filtered = products.filter(product => {
       const nameMatch = product.name.toLowerCase().includes(searchLower);
       const categoryMatch = product.category?.toLowerCase().includes(searchLower);
@@ -35,6 +68,7 @@ const SearchModal = ({ isOpen, onClose }) => {
     });
 
     setResults(filtered.slice(0, 8)); // Limitar a 8 resultados
+    setSelectedIndex(-1);
   }, [searchTerm, products]);
 
   const handleProductClick = (productId) => {
@@ -49,13 +83,53 @@ const SearchModal = ({ isOpen, onClose }) => {
     setSearchTerm('');
   };
 
+  const handleSuggestionClick = (suggestion) => {
+    setSearchTerm(suggestion.text);
+    setSelectedIndex(-1);
+  };
+
+  const highlightText = (text, query) => {
+    if (!query.trim()) return text;
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, index) => 
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark key={index} className="bg-yellow-200 font-semibold">{part}</mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
       onClose();
-    } else if (e.key === 'Enter' && searchTerm.trim() !== '') {
-      handleViewAll();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => 
+        prev < suggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+        handleSuggestionClick(suggestions[selectedIndex]);
+      } else if (searchTerm.trim() !== '') {
+        handleViewAll();
+      }
     }
   };
+
+  // Scroll a la sugerencia seleccionada
+  useEffect(() => {
+    if (selectedIndex >= 0 && suggestionsRef.current) {
+      const selectedElement = suggestionsRef.current.children[selectedIndex];
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+  }, [selectedIndex]);
 
   if (!isOpen) return null;
 
@@ -83,7 +157,7 @@ const SearchModal = ({ isOpen, onClose }) => {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Buscar productos..."
+                  placeholder="Buscar productos, categorías..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -96,6 +170,43 @@ const SearchModal = ({ isOpen, onClose }) => {
                   <FiX className="w-5 h-5" />
                 </button>
               </div>
+              
+              {/* Autocompletado - Sugerencias */}
+              {suggestions.length > 0 && searchTerm.trim() !== '' && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                  ref={suggestionsRef}
+                >
+                  <div className="p-2">
+                    <div className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      <FiTrendingUp className="w-4 h-4" />
+                      <span>Sugerencias</span>
+                    </div>
+                    {suggestions.map((suggestion, index) => (
+                      <button
+                        key={`${suggestion.text}-${index}`}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                          selectedIndex === index
+                            ? 'bg-yellow-100 text-black'
+                            : 'hover:bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">
+                            {highlightText(suggestion.text, searchTerm)}
+                          </span>
+                          <span className="text-xs text-gray-500 capitalize ml-2">
+                            {suggestion.type}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
             </div>
 
             {/* Results */}

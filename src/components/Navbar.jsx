@@ -107,6 +107,16 @@ const Navbar = () => {
               Ofertas
             </Link>
             <Link
+              to="/blog"
+              className={`text-sm font-medium transition-colors ${
+                isActive('/blog')
+                  ? 'text-yellow-500'
+                  : 'text-black hover:text-yellow-500'
+              }`}
+            >
+              Guía de Estilo
+            </Link>
+            <Link
               to="/contacto"
               className={`text-sm font-medium transition-colors ${
                 isActive('/contacto')

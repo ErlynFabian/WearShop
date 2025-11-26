@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiMinus, FiPlus, FiTrash2 } from 'react-icons/fi';
 import useCartStore from '../context/cartStore';
+import useToastStore from '../context/toastStore';
 import { formatPrice } from '../utils/formatPrice';
 
 const CartSidebar = () => {
@@ -69,7 +70,12 @@ const CartSidebar = () => {
                         <div className="flex items-center space-x-3">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-1 border border-gray-300 hover:bg-gray-100 transition-colors"
+                            disabled={item.quantity === 1}
+                            className={`p-1 border transition-colors ${
+                              item.quantity === 1
+                                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                : 'border-gray-300 hover:bg-gray-100'
+                            }`}
                           >
                             <FiMinus className="w-4 h-4" />
                           </button>
@@ -103,7 +109,7 @@ const CartSidebar = () => {
                 </div>
                 <button
                   onClick={() => {
-                    alert('Próximamente: Esta funcionalidad estará disponible pronto.');
+                    useToastStore.getState().info('Próximamente: Esta funcionalidad estará disponible pronto.');
                   }}
                   className="w-full bg-black text-white py-4 font-bold text-lg hover:opacity-90 transition-opacity"
                 >

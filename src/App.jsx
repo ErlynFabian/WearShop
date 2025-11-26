@@ -1,9 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartSidebar from './components/CartSidebar';
 import ScrollToTop from './components/ScrollToTop';
+import ScrollToTopButton from './components/ScrollToTopButton';
 import Chatbot from './components/Chatbot';
+import Toast from './components/Toast';
 import { useLoadData } from './hooks/useLoadData';
 import Home from './pages/Home';
 import Hombre from './pages/Hombre';
@@ -20,6 +23,8 @@ import Envios from './pages/Envios';
 import CalculadoraTallas from './pages/CalculadoraTallas';
 import FAQ from './pages/FAQ';
 import SearchResults from './pages/SearchResults';
+import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
 import Login from './pages/admin/Login';
 import AdminLayout from './components/admin/AdminLayout';
 import ProtectedRoute from './components/admin/ProtectedRoute';
@@ -34,14 +39,20 @@ import CreateSale from './pages/admin/CreateSale';
 import EditSale from './pages/admin/EditSale';
 import Notifications from './pages/admin/Notifications';
 import ContactMessages from './pages/admin/ContactMessages';
+import BlogManager from './pages/admin/BlogManager';
+import CreateBlogPost from './pages/admin/CreateBlogPost';
+import EditBlogPost from './pages/admin/EditBlogPost';
 
 function App() {
   useLoadData();
 
   return (
+    <HelmetProvider>
     <Router>
       <ScrollToTop />
+        <ScrollToTopButton />
       <Chatbot />
+        <Toast />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={
@@ -197,6 +208,26 @@ function App() {
             <CartSidebar />
       </div>
         } />
+                <Route path="/blog" element={
+          <div className="min-h-screen flex flex-col">
+            <Navbar />
+            <main className="flex-grow">
+              <Blog />
+            </main>
+            <Footer />
+            <CartSidebar />
+          </div>
+        } />
+                <Route path="/blog/:id" element={
+          <div className="min-h-screen flex flex-col">
+            <Navbar />
+            <main className="flex-grow">
+              <BlogPost />
+            </main>
+            <Footer />
+            <CartSidebar />
+      </div>
+        } />
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<Login />} />
@@ -217,11 +248,15 @@ function App() {
                   <Route path="sales" element={<SalesManager />} />
                   <Route path="sales/create" element={<CreateSale />} />
                   <Route path="sales/edit/:id" element={<EditSale />} />
+                  <Route path="blog" element={<BlogManager />} />
+                  <Route path="blog/create" element={<CreateBlogPost />} />
+                  <Route path="blog/edit/:id" element={<EditBlogPost />} />
                   <Route path="notifications" element={<Notifications />} />
                   <Route path="contact-messages" element={<ContactMessages />} />
                 </Route>
       </Routes>
     </Router>
+    </HelmetProvider>
   );
 }
 

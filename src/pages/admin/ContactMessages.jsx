@@ -6,6 +6,7 @@ import { contactService } from '../../services/contactService';
 import { supabase } from '../../lib/supabase';
 import AlertModal from '../../components/admin/AlertModal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import MessageSkeleton from '../../components/skeletons/MessageSkeleton';
 
 const ContactMessages = () => {
   const [messages, setMessages] = useState([]);
@@ -206,8 +207,14 @@ const ContactMessages = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Cargando mensajes...</p>
+      <div className="pb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
+          <div>
+            <div className="h-12 bg-gray-200 rounded w-48 mb-2 animate-pulse-fast" />
+            <div className="h-5 bg-gray-200 rounded w-64 animate-pulse-fast" />
+          </div>
+        </div>
+        <MessageSkeleton count={8} />
       </div>
     );
   }

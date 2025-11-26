@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiFilter, FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import useToastStore from '../context/toastStore';
 
 const ProductFilters = ({ 
   products = [], 
@@ -69,6 +70,7 @@ const ProductFilters = ({
     };
     setFilters(clearedFilters);
     onFilterChange(clearedFilters);
+    useToastStore.getState().info('Filtros eliminados');
   };
 
   const hasActiveFilters = filters.minPrice || filters.maxPrice || filters.sizes.length > 0 || filters.colors.length > 0 || filters.sortBy !== 'default';
@@ -252,6 +254,7 @@ const ProductFilters = ({
                   </div>
                 </div>
               )}
+
             </div>
           </motion.div>
         )}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiLock, FiUser } from 'react-icons/fi';
+import { useNavigate, Link } from 'react-router-dom';
+import { FiLock, FiUser, FiArrowLeft, FiHome } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import useAuthStore from '../../context/authStore';
 
@@ -24,7 +24,16 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 sm:px-6 lg:px-8 relative">
+      {/* Botón Volver al inicio - Esquina superior izquierda */}
+      <Link
+        to="/"
+        className="absolute top-6 left-4 sm:left-6 lg:left-8 inline-flex items-center space-x-2 text-gray-600 hover:text-black transition-colors"
+      >
+        <FiHome className="w-5 h-5" />
+        <span className="hidden sm:inline">Volver al inicio</span>
+      </Link>
+
       <div className="w-full max-w-md">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

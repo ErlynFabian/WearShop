@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiSave, FiX } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import useProductsStore from '../../context/productsStore';
+import useToastStore from '../../context/toastStore';
 import useCategoriesStore from '../../context/categoriesStore';
 import useProductTypesStore from '../../context/productTypesStore';
 
@@ -115,6 +116,7 @@ const CreateProduct = () => {
       sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()).filter(s => s) : [],
       colors: formData.colors ? formData.colors.split(',').map(c => c.trim()).filter(c => c) : []
     });
+    useToastStore.getState().success(`Producto "${formData.name}" creado correctamente`);
     navigate('/admin/products');
   };
 

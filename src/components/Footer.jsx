@@ -52,6 +52,11 @@ const Footer = () => {
                   Ofertas
                 </Link>
               </li>
+              <li>
+                <Link to="/blog" className="hover:text-black transition-colors">
+                  Guía de Estilo
+                </Link>
+              </li>
             </ul>
           </div>
 

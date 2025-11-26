@@ -261,8 +261,8 @@ const NotificationsDropdown = () => {
           {/* Notifications List */}
           <div className="overflow-y-auto flex-1">
             {loading ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                Cargando notificaciones...
+              <div className="p-4">
+                <NotificationSkeleton count={3} />
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center text-gray-500 text-sm">

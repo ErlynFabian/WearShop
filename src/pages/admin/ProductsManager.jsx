@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiStar } from 'react-icons/fi';
 import useProductsStore from '../../context/productsStore';
+import useToastStore from '../../context/toastStore';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import ProductCardSkeleton from '../../components/admin/ProductCardSkeleton';
+import TableSkeleton from '../../components/skeletons/TableSkeleton';
 import { formatPrice } from '../../utils/formatPrice';
 
 const ProductsManager = () => {
@@ -38,8 +41,12 @@ const ProductsManager = () => {
 
   const handleDeleteConfirm = () => {
     if (deleteModal.productId) {
+      const product = products.find(p => p.id === deleteModal.productId);
       deleteProduct(deleteModal.productId);
       setDeleteModal({ isOpen: false, productId: null });
+      if (product) {
+        useToastStore.getState().success(`Producto "${product.name}" eliminado correctamente`);
+      }
     }
   };
 
@@ -79,8 +86,10 @@ const ProductsManager = () => {
       {/* Products Cards - Mobile */}
       <div className="md:hidden space-y-4">
         {loading ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center text-gray-500">
-            Cargando productos...
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <ProductCardSkeleton key={index} />
+            ))}
           </div>
         ) : paginatedProducts.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center text-gray-500">
@@ -193,11 +202,35 @@ const ProductsManager = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                    Cargando productos...
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-4">
+                      <div className="h-16 w-16 bg-gray-200 rounded animate-pulse-fast" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse-fast" />
+                      <div className="h-3 bg-gray-200 rounded w-24 animate-pulse-fast" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-20 animate-pulse-fast" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse-fast" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse-fast" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-6 w-6 bg-gray-200 rounded animate-pulse-fast" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse-fast" />
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse-fast" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : paginatedProducts.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-8 text-center text-gray-500">

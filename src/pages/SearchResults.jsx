@@ -3,7 +3,10 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiSearch } from 'react-icons/fi';
 import ProductGrid from '../components/ProductGrid';
+import ProductGridSkeleton from '../components/ProductGridSkeleton';
 import ProductFilters from '../components/ProductFilters';
+import SEO from '../components/SEO';
+import useToastStore from '../context/toastStore';
 import useProductsStore from '../context/productsStore';
 import useCategoriesStore from '../context/categoriesStore';
 
@@ -106,16 +109,37 @@ const SearchResults = () => {
     return filtered;
   }, [products, query, categoryFilter, advancedFilters]);
 
+  // Notificación cuando no hay resultados
+  useEffect(() => {
+    if (!loadingData && query.trim() !== '' && filteredProducts.length === 0) {
+      useToastStore.getState().warning(`No se encontraron productos para "${query}"`);
+    }
+  }, [filteredProducts.length, query, loadingData]);
+
   if (loadingData) {
     return (
-      <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 text-center">
-        <p className="text-gray-600 text-lg">Cargando productos...</p>
+      <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="h-12 bg-gray-200 rounded mb-4 w-96 animate-pulse-fast" />
+          <div className="h-6 bg-gray-200 rounded mb-8 w-48 animate-pulse-fast" />
+          <ProductGridSkeleton count={8} />
+        </div>
       </div>
     );
   }
 
+  const searchTitle = query ? `Resultados de búsqueda: "${query}"` : 'Búsqueda de Productos';
+  const searchDescription = query 
+    ? `Encuentra productos relacionados con "${query}". ${filteredProducts.length} ${filteredProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}.`
+    : 'Busca productos en nuestra tienda. Encuentra lo que necesitas fácilmente.';
+
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title={searchTitle}
+        description={searchDescription}
+        keywords={query ? `${query}, búsqueda, productos, moda` : 'búsqueda, productos, moda'}
+      />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div

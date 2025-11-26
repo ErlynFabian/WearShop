@@ -5,6 +5,7 @@ import { salesService } from '../../services/salesService';
 import useProductsStore from '../../context/productsStore';
 import AlertModal from '../../components/admin/AlertModal';
 import { formatPrice } from '../../utils/formatPrice';
+import FormSkeleton from '../../components/skeletons/FormSkeleton';
 
 const EditSale = () => {
   const { id } = useParams();
@@ -168,8 +169,13 @@ const EditSale = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Cargando venta...</p>
+      <div>
+        <div className="mb-8">
+          <div className="h-10 bg-gray-200 rounded w-32 mb-4 animate-pulse-fast" />
+          <div className="h-12 bg-gray-200 rounded w-64 mb-2 animate-pulse-fast" />
+          <div className="h-5 bg-gray-200 rounded w-48 animate-pulse-fast" />
+        </div>
+        <FormSkeleton />
       </div>
     );
   }

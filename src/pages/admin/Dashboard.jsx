@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import StatsSkeleton from '../../components/skeletons/StatsSkeleton';
+import ActivitySkeleton from '../../components/skeletons/ActivitySkeleton';
 import { FiPackage, FiFolder, FiDollarSign, FiTrendingUp, FiMail } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import useProductsStore from '../../context/productsStore';
@@ -101,14 +103,14 @@ const Dashboard = () => {
     },
     {
       title: 'Ventas Totales',
-      value: loadingStats ? 'Cargando...' : formatCurrency(totalSales),
+      value: loadingStats ? '...' : formatCurrency(totalSales),
       icon: FiDollarSign,
       color: 'bg-yellow-500',
       change: growthPercentage > 0 ? `+${growthPercentage.toFixed(1)}%` : `${growthPercentage.toFixed(1)}%`
     },
     {
       title: 'Crecimiento',
-      value: loadingStats ? 'Cargando...' : `${growthPercentage.toFixed(1)}%`,
+      value: loadingStats ? '...' : `${growthPercentage.toFixed(1)}%`,
       icon: FiTrendingUp,
       color: 'bg-purple-500',
       change: growthPercentage > 0 ? `+${Math.abs(growthPercentage).toFixed(1)}%` : `${growthPercentage.toFixed(1)}%`
@@ -123,23 +125,27 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-8">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="bg-white rounded-lg p-3 sm:p-4 md:p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-2 sm:mb-4">
-                <div className="p-2 sm:p-3 rounded-lg bg-gray-100">
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-black" />
+      {loadingStats ? (
+        <StatsSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-8">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <div key={index} className="bg-white rounded-lg p-3 sm:p-4 md:p-6 border border-gray-200">
+                <div className="flex items-center justify-between mb-2 sm:mb-4">
+                  <div className="p-2 sm:p-3 rounded-lg bg-gray-100">
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-black" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium text-gray-600">{stat.change}</span>
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-gray-600">{stat.change}</span>
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-black mb-1">{stat.value}</h3>
+                <p className="text-xs sm:text-sm text-gray-600 font-medium">{stat.title}</p>
               </div>
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-black mb-1">{stat.value}</h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium">{stat.title}</p>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -147,7 +153,7 @@ const Dashboard = () => {
           <h3 className="text-xl font-bold text-black mb-6">Actividad Reciente</h3>
           <div className="space-y-4">
             {loadingActivities ? (
-              <p className="text-sm text-gray-500">Cargando actividades...</p>
+              <ActivitySkeleton count={5} />
             ) : activities.length === 0 ? (
               <p className="text-sm text-gray-500">No hay actividades recientes</p>
             ) : (
