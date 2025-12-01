@@ -235,14 +235,34 @@ export const reportsService = {
     ]);
 
     const revenueChange = period2.total - period1.total;
-    const revenueChangePercent = period1.total > 0 
-      ? ((revenueChange / period1.total) * 100) 
-      : (period2.total > 0 ? 100 : 0);
+    let revenueChangePercent = 0;
+    
+    if (period1.total > 0) {
+      // Si el período anterior tiene ingresos, calcular el porcentaje de cambio
+      revenueChangePercent = (revenueChange / period1.total) * 100;
+    } else if (period2.total > 0) {
+      // Si el período anterior no tiene ingresos pero el actual sí, es un crecimiento infinito
+      // Mostramos 100% para indicar que hay crecimiento desde cero
+      revenueChangePercent = 100;
+    } else {
+      // Ambos períodos tienen 0 ingresos
+      revenueChangePercent = 0;
+    }
 
     const salesChange = period2.count - period1.count;
-    const salesChangePercent = period1.count > 0 
-      ? ((salesChange / period1.count) * 100) 
-      : (period2.count > 0 ? 100 : 0);
+    let salesChangePercent = 0;
+    
+    if (period1.count > 0) {
+      // Si el período anterior tiene transacciones, calcular el porcentaje de cambio
+      salesChangePercent = (salesChange / period1.count) * 100;
+    } else if (period2.count > 0) {
+      // Si el período anterior no tiene transacciones pero el actual sí, es un crecimiento infinito
+      // Mostramos 100% para indicar que hay crecimiento desde cero
+      salesChangePercent = 100;
+    } else {
+      // Ambos períodos tienen 0 transacciones
+      salesChangePercent = 0;
+    }
 
     return {
       period1,

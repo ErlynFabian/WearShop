@@ -27,6 +27,9 @@ const EditSale = () => {
     notes: ''
   });
   const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+  const [productSearch, setProductSearch] = useState('');
+  const [productSuggestions, setProductSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     loadSale();
@@ -66,6 +69,7 @@ const EditSale = () => {
         const price = sale.price || 0;
         const total = sale.total || (quantity * price);
         const profit = sale.profit !== undefined ? sale.profit : (total - (cost * quantity));
+        const displayPrice = product && product.onSale && product.salePrice ? product.salePrice : (sale.price || price);
         
         setFormData({
           product_id: sale.product_id || '',
@@ -81,6 +85,11 @@ const EditSale = () => {
           status: sale.status || 'completed',
           notes: sale.notes || ''
         });
+        
+        // Establecer el texto de búsqueda del producto
+        if (sale.product_name) {
+          setProductSearch(`${sale.product_name} - ${formatPrice(displayPrice)}`);
+        }
       }
     } catch (error) {
       console.error('Error loading sale:', error);
@@ -113,24 +122,14 @@ const EditSale = () => {
     });
   };
 
-  const handleProductChange = (e) => {
-    const productId = parseInt(e.target.value);
-    const product = products.find(p => p.id === productId);
+  const handleProductSearch = (e) => {
+    const searchValue = e.target.value;
+    setProductSearch(searchValue);
     
-    if (product) {
-      const price = product.onSale && product.salePrice ? product.salePrice : product.price;
-      const cost = product.cost || 0;
-      const quantity = formData.quantity || 1;
-      setFormData(prev => ({
-        ...prev,
-        product_id: productId,
-        product_name: product.name,
-        price: price.toFixed(2),
-        cost: cost,
-        total: (quantity * price).toFixed(2),
-        profit: (quantity * price - quantity * cost).toFixed(2)
-      }));
-    } else {
+    if (searchValue.trim() === '') {
+      setProductSuggestions([]);
+      setShowSuggestions(false);
+      // Limpiar datos del producto si se borra el input
       setFormData(prev => ({
         ...prev,
         product_id: '',
@@ -140,7 +139,36 @@ const EditSale = () => {
         total: '',
         profit: 0
       }));
+      return;
     }
+    
+    // Buscar productos que coincidan con el texto ingresado
+    const filtered = products.filter(product =>
+      product.name.toLowerCase().includes(searchValue.toLowerCase())
+    ).slice(0, 10); // Limitar a 10 sugerencias
+    
+    setProductSuggestions(filtered);
+    setShowSuggestions(filtered.length > 0);
+  };
+
+  const handleProductSelect = (product) => {
+    const price = product.onSale && product.salePrice ? product.salePrice : product.price;
+    const cost = product.cost || 0;
+    const quantity = formData.quantity || 1;
+    
+    setProductSearch(`${product.name} - ${formatPrice(price)}`);
+    setProductSuggestions([]);
+    setShowSuggestions(false);
+    
+    setFormData(prev => ({
+      ...prev,
+      product_id: product.id,
+      product_name: product.name,
+      price: price.toFixed(2),
+      cost: cost,
+      total: (quantity * price).toFixed(2),
+      profit: (quantity * price - quantity * cost).toFixed(2)
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -198,24 +226,45 @@ const EditSale = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Producto *
               </label>
-              <select
-                name="product_id"
-                value={formData.product_id}
-                onChange={handleProductChange}
-                required
+              <input
+                type="text"
+                value={productSearch}
+                onChange={handleProductSearch}
+                onFocus={() => {
+                  if (productSuggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay para permitir el click en las sugerencias
+                  setTimeout(() => setShowSuggestions(false), 200);
+                }}
+                required={!formData.product_id}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-              >
-                <option value="">Seleccionar producto</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} - {formatPrice(product.onSale && product.salePrice ? product.salePrice : product.price)}
-                  </option>
-                ))}
-              </select>
+                placeholder="Buscar producto por nombre..."
+              />
+              {showSuggestions && productSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {productSuggestions.map((product) => {
+                    const price = product.onSale && product.salePrice ? product.salePrice : product.price;
+                    return (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => handleProductSelect(product)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium text-gray-900">{product.name}</div>
+                        <div className="text-sm text-gray-500">{formatPrice(price)}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div>

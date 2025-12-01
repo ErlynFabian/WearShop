@@ -39,7 +39,8 @@ const EditProduct = () => {
     sizes: '',
     colors: '',
     onSale: false,
-    salePrice: ''
+    salePrice: '',
+    featured: false
   });
 
   useEffect(() => {
@@ -56,7 +57,8 @@ const EditProduct = () => {
         sizes: product.sizes ? product.sizes.join(', ') : '',
         colors: product.colors ? product.colors.join(', ') : '',
         onSale: product.onSale || false,
-        salePrice: product.salePrice || ''
+        salePrice: product.salePrice || '',
+        featured: product.featured || false
       });
     }
   }, [product]);
@@ -138,7 +140,8 @@ const EditProduct = () => {
       sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()).filter(s => s) : [],
       colors: formData.colors ? formData.colors.split(',').map(c => c.trim()).filter(c => c) : [],
       onSale: formData.onSale || false,
-      salePrice: formData.onSale && formData.salePrice ? parseFloat(formData.salePrice) : null
+      salePrice: formData.onSale && formData.salePrice ? parseFloat(formData.salePrice) : null,
+      featured: formData.featured || false
     });
     useToastStore.getState().success(`Producto "${formData.name}" actualizado correctamente`);
     navigate('/admin/products');
@@ -300,9 +303,9 @@ const EditProduct = () => {
               />
             </div>
 
-            {/* Oferta */}
-            <div className="col-span-2 border-t border-gray-200 pt-6">
-              <div className="flex items-center space-x-3 mb-4">
+            {/* Oferta y Destacado */}
+            <div className="col-span-2 border-t border-gray-200 pt-6 space-y-4">
+              <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   name="onSale"
@@ -336,6 +339,19 @@ const EditProduct = () => {
                   </p>
                 </div>
               )}
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  name="featured"
+                  id="featured"
+                  checked={formData.featured}
+                  onChange={handleChange}
+                  className="w-5 h-5 text-yellow-400 border-gray-300 rounded focus:ring-yellow-400 focus:ring-2"
+                />
+                <label htmlFor="featured" className="text-sm font-medium text-gray-700">
+                  Producto destacado
+                </label>
+              </div>
             </div>
           </div>
 

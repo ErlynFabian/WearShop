@@ -14,7 +14,7 @@ import SEO from '../components/SEO';
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products } = useProductsStore();
+  const { products, loading } = useProductsStore();
   const { addItem, openCart } = useCartStore();
   const { addViewedProduct } = useRecentlyViewedStore();
   const [selectedSize, setSelectedSize] = useState('');
@@ -29,6 +29,94 @@ const ProductDetail = () => {
     }
   }, [product, addViewedProduct]);
 
+  // Productos relacionados
+  const relatedProducts = useMemo(() => {
+    if (!product) return [];
+    return products
+      .filter(p => p.id !== product.id && p.category === product.category && (p.stock || 0) > 0)
+      .slice(0, 4);
+  }, [products, product]);
+
+  // Skeleton loader
+  const ProductDetailSkeleton = () => (
+    <div className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title="Cargando producto..."
+        description="Cargando información del producto."
+      />
+      <div className="max-w-7xl mx-auto">
+        {/* Back Button Skeleton */}
+        <div className="h-6 w-24 bg-gray-200 rounded mb-6 animate-pulse"></div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Image Skeleton */}
+          <div className="aspect-square bg-gray-200 rounded-lg animate-pulse"></div>
+
+          {/* Details Skeleton */}
+          <div className="flex flex-col justify-start pt-4">
+            {/* Badge Skeleton */}
+            <div className="h-6 w-32 bg-gray-200 rounded mb-3 animate-pulse"></div>
+            
+            {/* Title Skeleton */}
+            <div className="h-12 w-3/4 bg-gray-200 rounded mb-2 animate-pulse"></div>
+            
+            {/* Category Skeleton */}
+            <div className="h-5 w-24 bg-gray-200 rounded mb-4 animate-pulse"></div>
+            
+            {/* Price Skeleton */}
+            <div className="h-10 w-40 bg-gray-200 rounded mb-6 animate-pulse"></div>
+
+            {/* Sizes Skeleton */}
+            <div className="mb-8">
+              <div className="h-5 w-40 bg-gray-200 rounded mb-3 animate-pulse"></div>
+              <div className="flex flex-wrap gap-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-10 w-16 bg-gray-200 rounded-lg animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Colors Skeleton */}
+            <div className="mb-8">
+              <div className="h-5 w-24 bg-gray-200 rounded mb-3 animate-pulse"></div>
+              <div className="flex flex-wrap gap-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-10 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Buttons Skeleton */}
+            <div className="space-y-4 mb-8">
+              <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+
+            {/* Info Sections Skeleton */}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="mb-8 pb-8 border-b border-gray-200">
+                <div className="flex items-start space-x-3">
+                  <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="flex-1">
+                    <div className="h-5 w-32 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                    <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Mostrar skeleton mientras se cargan los productos
+  if (loading || (products.length === 0 && !product)) {
+    return <ProductDetailSkeleton />;
+  }
+
+  // Solo mostrar "no encontrado" si ya se cargaron los productos y no existe
   if (!product) {
     return (
       <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 text-center">
@@ -337,25 +425,14 @@ const ProductDetail = () => {
         </div>
 
         {/* Related Products */}
-        {(() => {
-          const relatedProducts = useMemo(() => {
-            return products
-              .filter(p => p.id !== product.id && p.category === product.category)
-              .slice(0, 4);
-          }, [products, product]);
-
-          if (relatedProducts.length > 0) {
-            return (
-              <div className="mt-20">
-                <h2 className="text-4xl md:text-5xl font-black text-black mb-12 text-center">
-                  Productos Relacionados
-                </h2>
-                <ProductGrid products={relatedProducts} />
-              </div>
-            );
-          }
-          return null;
-        })()}
+        {relatedProducts.length > 0 && (
+          <div className="mt-20">
+            <h2 className="text-4xl md:text-5xl font-black text-black mb-12 text-center">
+              Productos Relacionados
+            </h2>
+            <ProductGrid products={relatedProducts} />
+          </div>
+        )}
       </div>
     </div>
   );

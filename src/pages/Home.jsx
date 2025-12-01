@@ -12,7 +12,7 @@ const Home = () => {
   const { getViewedProductIds } = useRecentlyViewedStore();
   
   const featuredProducts = useMemo(() => {
-    return products.filter(p => p.featured).slice(0, 8);
+    return products.filter(p => p.featured && (p.stock || 0) > 0).slice(0, 8);
   }, [products]);
 
   const recentlyViewedProducts = useMemo(() => {
@@ -22,7 +22,7 @@ const Home = () => {
     // Obtener los productos en el orden en que fueron vistos
     const viewed = viewedIds
       .map(id => products.find(p => p.id === id))
-      .filter(p => p !== undefined); // Filtrar productos que ya no existen
+      .filter(p => p !== undefined && (p.stock || 0) > 0); // Filtrar productos que ya no existen y que no tienen stock
     
     return viewed;
   }, [products, getViewedProductIds]);

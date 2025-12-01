@@ -38,7 +38,8 @@ const SearchResults = () => {
   }, [loadProducts, loadCategories]);
 
   const filteredProducts = useMemo(() => {
-    let filtered = products;
+    // Filtrar productos con stock > 0
+    let filtered = products.filter(p => (p.stock || 0) > 0);
 
     // Búsqueda por texto
     if (query.trim() !== '') {

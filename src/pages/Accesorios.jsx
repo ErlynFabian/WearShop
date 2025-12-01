@@ -21,7 +21,7 @@ const Accesorios = () => {
     };
     loadData();
   }, [loadProducts, loadTypes]);
-  const accesoriosProducts = products.filter(p => p.category === 'accesorios');
+  const accesoriosProducts = products.filter(p => p.category === 'accesorios' && (p.stock || 0) > 0);
   
   // Agrupar productos por tipo
   const productsByType = accesoriosProducts.reduce((acc, product) => {

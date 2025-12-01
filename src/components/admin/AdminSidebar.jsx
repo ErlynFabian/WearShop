@@ -98,7 +98,7 @@ const AdminSidebar = ({ isOpen = false, onClose }) => {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="border-b border-gray-200 relative" style={{ padding: '0.75rem 1rem', height: '3.5rem', display: 'flex', alignItems: 'center' }}>
+      <div className="border-b border-gray-200 relative" style={{ padding: '1rem 1.5rem', height: '4rem', display: 'flex', alignItems: 'center' }}>
         <Link to="/admin" onClick={handleLinkClick} className="flex items-center space-x-2">
           <span 
             className="text-base font-bold tracking-tight"

@@ -20,9 +20,11 @@ import * as XLSX from 'xlsx';
 const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month'); // 'day', 'week', 'month'
-  const [dateRange, setDateRange] = useState('30'); // '7', '30', '90', 'custom'
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    // Por defecto, mes actual en formato YYYY-MM
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
   const [salesData, setSalesData] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [revenue, setRevenue] = useState({ total: 0, count: 0, average: 0 });
@@ -32,25 +34,21 @@ const Reports = () => {
 
   useEffect(() => {
     loadReports();
-  }, [period, dateRange, customStartDate, customEndDate]);
+  }, [period, selectedMonth]);
 
   const getDateRange = () => {
-    const endDate = new Date();
+    // Siempre mostrar el mes actual completo
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    // Primer día del mes actual
+    const startDate = new Date(currentYear, currentMonth, 1);
+    startDate.setHours(0, 0, 0, 0);
+    
+    // Último día del mes actual
+    const endDate = new Date(currentYear, currentMonth + 1, 0);
     endDate.setHours(23, 59, 59, 999);
-    
-    let startDate = new Date();
-    
-    if (dateRange === 'custom' && customStartDate && customEndDate) {
-      startDate = new Date(customStartDate);
-      startDate.setHours(0, 0, 0, 0);
-      const end = new Date(customEndDate);
-      end.setHours(23, 59, 59, 999);
-      return { startDate, endDate: end };
-    } else {
-      const days = parseInt(dateRange);
-      startDate.setDate(startDate.getDate() - days);
-      startDate.setHours(0, 0, 0, 0);
-    }
     
     return { startDate, endDate };
   };
@@ -96,12 +94,14 @@ const Reports = () => {
         average: revenueData?.average || 0
       });
 
-      // Comparar con período anterior
-      const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-      const prevStartDate = new Date(startDate);
-      prevStartDate.setDate(prevStartDate.getDate() - daysDiff);
-      const prevEndDate = new Date(startDate);
-      prevEndDate.setDate(prevEndDate.getDate() - 1);
+      // Comparar con el mes seleccionado (período de comparación)
+      const [year, month] = selectedMonth.split('-').map(Number);
+      
+      // Período de comparación: mes seleccionado completo (del día 1 al último día del mes)
+      const prevStartDate = new Date(year, month - 1, 1);
+      prevStartDate.setHours(0, 0, 0, 0);
+      
+      const prevEndDate = new Date(year, month, 0); // Último día del mes seleccionado
       prevEndDate.setHours(23, 59, 59, 999);
 
       try {
@@ -111,6 +111,29 @@ const Reports = () => {
           startDate,
           endDate
         );
+        
+        // Logs de depuración para verificar la comparación
+        console.log('=== COMPARACIÓN DE PERÍODOS ===');
+        console.log('Período de Comparación (Mes Seleccionado):');
+        console.log('  Inicio:', prevStartDate.toLocaleDateString('es-ES'), prevStartDate.toLocaleTimeString('es-ES'));
+        console.log('  Fin:', prevEndDate.toLocaleDateString('es-ES'), prevEndDate.toLocaleTimeString('es-ES'));
+        console.log('  Ingresos:', formatPrice(comparisonData.period1.total), `(${comparisonData.period1.total})`);
+        console.log('  Transacciones:', comparisonData.period1.count);
+        console.log('Período Actual (Mes Actual):');
+        console.log('  Inicio:', startDate.toLocaleDateString('es-ES'), startDate.toLocaleTimeString('es-ES'));
+        console.log('  Fin:', endDate.toLocaleDateString('es-ES'), endDate.toLocaleTimeString('es-ES'));
+        console.log('  Ingresos:', formatPrice(comparisonData.period2.total), `(${comparisonData.period2.total})`);
+        console.log('  Transacciones:', comparisonData.period2.count);
+        console.log('Revenue State (debería ser mes actual):');
+        console.log('  Ingresos:', formatPrice(revenueData?.total || 0), `(${revenueData?.total || 0})`);
+        console.log('  Transacciones:', revenueData?.count || 0);
+        console.log('Cambios Calculados:');
+        console.log('  Cambio en Ingresos:', formatPrice(comparisonData.revenueChange), `(${comparisonData.revenueChange})`);
+        console.log('  Porcentaje Ingresos:', comparisonData.revenueChangePercent.toFixed(1) + '%');
+        console.log('  Cambio en Transacciones:', comparisonData.salesChange);
+        console.log('  Porcentaje Transacciones:', comparisonData.salesChangePercent.toFixed(1) + '%');
+        console.log('==============================');
+        
         setComparison(comparisonData);
       } catch (compError) {
         console.error('Error comparing periods:', compError);
@@ -251,7 +274,7 @@ const Reports = () => {
             >
               <FiFilter className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Filtros</span>
-              {(period !== 'month' || dateRange !== '30') && (
+              {period !== 'month' && (
                 <span className="bg-yellow-400 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                   !
                 </span>
@@ -265,12 +288,12 @@ const Reports = () => {
           <>
             {/* Backdrop para móvil */}
             <div 
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+              className="fixed inset-0 bg-black/50 z-30 lg:hidden"
               onClick={() => setFiltersOpen(false)}
             />
             
             {/* Panel de Filtros */}
-            <div className="fixed lg:relative top-1/2 lg:top-auto left-1/2 lg:left-auto transform -translate-x-1/2 lg:transform-none -translate-y-1/2 lg:translate-y-0 w-[90%] lg:w-full max-w-md lg:max-w-none bg-white rounded-lg p-4 sm:p-6 border border-gray-200 mb-6 shadow-xl lg:shadow-none z-50">
+            <div className="fixed lg:relative top-1/2 lg:top-0 left-1/2 lg:left-0 transform -translate-x-1/2 lg:transform-none -translate-y-1/2 lg:translate-y-0 w-[90%] lg:w-full max-w-md lg:max-w-none bg-white rounded-lg p-4 sm:p-6 border border-gray-200 mb-6 shadow-xl lg:shadow-none z-30 lg:z-0">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-black">Filtros</h3>
                 <button
@@ -281,7 +304,7 @@ const Reports = () => {
                 </button>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Período de agrupación
@@ -298,45 +321,18 @@ const Reports = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Rango de fechas
+                    Comparar con el mes
                   </label>
-                  <select
-                    value={dateRange}
-                    onChange={(e) => setDateRange(e.target.value)}
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                  >
-                    <option value="7">Últimos 7 días</option>
-                    <option value="30">Últimos 30 días</option>
-                    <option value="90">Últimos 90 días</option>
-                    <option value="custom">Personalizado</option>
-                  </select>
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Se mostrará el mes actual comparado con el mes seleccionado
+                  </p>
                 </div>
-                {dateRange === 'custom' && (
-                  <div className="sm:col-span-2 lg:col-span-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Fecha inicio
-                      </label>
-                      <input
-                        type="date"
-                        value={customStartDate}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Fecha fin
-                      </label>
-                      <input
-                        type="date"
-                        value={customEndDate}
-                        onChange={(e) => setCustomEndDate(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
               
               {/* Botón de aplicar (solo móvil) */}
@@ -369,19 +365,24 @@ const Reports = () => {
               </div>
               <p className="text-2xl sm:text-3xl font-black text-black break-words">{formatPrice(revenue.total)}</p>
               {comparison && (
-                <div className="mt-2 flex flex-wrap items-center gap-1">
-                  {comparison.revenueChangePercent >= 0 ? (
-                    <FiTrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
-                  ) : (
-                    <FiTrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
-                  )}
-                  <span className={`text-xs sm:text-sm font-medium ${
-                    comparison.revenueChangePercent >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {comparison.revenueChangePercent >= 0 ? '+' : ''}
-                    {comparison.revenueChangePercent.toFixed(1)}%
-                  </span>
-                  <span className="text-xs sm:text-sm text-gray-500">vs período anterior</span>
+                <div className="mt-2 space-y-1">
+                  <div className="flex flex-wrap items-center gap-1">
+                    {comparison.revenueChangePercent >= 0 ? (
+                      <FiTrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                    ) : (
+                      <FiTrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
+                    )}
+                    <span className={`text-xs sm:text-sm font-medium ${
+                      comparison.revenueChangePercent >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {comparison.revenueChangePercent >= 0 ? '+' : ''}
+                      {comparison.revenueChangePercent.toFixed(1)}%
+                    </span>
+                    <span className="text-xs sm:text-sm text-gray-500">vs período anterior</span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Mes comparado: {formatPrice(comparison.period1.total || 0)}
+                  </p>
                 </div>
               )}
             </div>
@@ -392,19 +393,24 @@ const Reports = () => {
               </div>
               <p className="text-2xl sm:text-3xl font-black text-black">{revenue.count}</p>
               {comparison && (
-                <div className="mt-2 flex flex-wrap items-center gap-1">
-                  {comparison.salesChangePercent >= 0 ? (
-                    <FiTrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
-                  ) : (
-                    <FiTrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
-                  )}
-                  <span className={`text-xs sm:text-sm font-medium ${
-                    comparison.salesChangePercent >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {comparison.salesChangePercent >= 0 ? '+' : ''}
-                    {comparison.salesChangePercent.toFixed(1)}%
-                  </span>
-                  <span className="text-xs sm:text-sm text-gray-500">vs período anterior</span>
+                <div className="mt-2 space-y-1">
+                  <div className="flex flex-wrap items-center gap-1">
+                    {comparison.salesChangePercent >= 0 ? (
+                      <FiTrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                    ) : (
+                      <FiTrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
+                    )}
+                    <span className={`text-xs sm:text-sm font-medium ${
+                      comparison.salesChangePercent >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {comparison.salesChangePercent >= 0 ? '+' : ''}
+                      {comparison.salesChangePercent.toFixed(1)}%
+                    </span>
+                    <span className="text-xs sm:text-sm text-gray-500">vs período anterior</span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Mes comparado: {comparison.period1.count || 0} transacciones
+                  </p>
                 </div>
               )}
             </div>

@@ -94,9 +94,14 @@ const useProductsStore = create(
                 salePrice: data.sale_price ? parseFloat(data.sale_price) : null,
                 created_at: data.created_at || null,
               };
-              set((state) => ({
-                products: [...state.products, mappedData]
-              }));
+              // Verificar si el producto ya existe antes de agregarlo (evitar duplicados de la suscripción)
+              const currentProducts = get().products;
+              const productExists = currentProducts.some(p => p.id === mappedData.id);
+              if (!productExists) {
+                set((state) => ({
+                  products: [...state.products, mappedData]
+                }));
+              }
               return mappedData;
             } catch (error) {
               console.error('Error adding product:', error);
@@ -264,18 +269,18 @@ const useProductsStore = create(
                           ...p,
                           id: updatedProduct.id,
                           name: updatedProduct.name || p.name,
-                          cost: updatedProduct.cost ? parseFloat(updatedProduct.cost) : (p.cost || 0),
+                          cost: updatedProduct.cost !== undefined && updatedProduct.cost !== null ? parseFloat(updatedProduct.cost) : (p.cost || 0),
                           price: parseFloat(updatedProduct.price) || p.price,
                           description: updatedProduct.description || p.description,
                           category: updatedProduct.category || p.category,
                           type: updatedProduct.type || p.type,
-                          stock: updatedProduct.stock || p.stock || 0,
+                          stock: updatedProduct.stock !== undefined && updatedProduct.stock !== null ? (updatedProduct.stock || 0) : (p.stock || 0),
                           image: updatedProduct.image || p.image, // Preservar imagen existente
                           sizes: updatedProduct.sizes || p.sizes || [],
                           colors: updatedProduct.colors || p.colors || [],
                           featured: updatedProduct.featured !== undefined ? updatedProduct.featured : p.featured,
                           onSale: updatedProduct.on_sale !== undefined ? updatedProduct.on_sale : p.onSale,
-                          salePrice: updatedProduct.sale_price ? parseFloat(updatedProduct.sale_price) : p.salePrice,
+                          salePrice: updatedProduct.sale_price !== undefined && updatedProduct.sale_price !== null ? parseFloat(updatedProduct.sale_price) : p.salePrice,
                           created_at: updatedProduct.created_at || p.created_at || null,
                         };
                       }
@@ -284,26 +289,32 @@ const useProductsStore = create(
                   }));
                 } else if (payload.eventType === 'INSERT' && payload.new) {
                   const newProduct = payload.new;
-                  const mappedData = {
-                    id: newProduct.id,
-                    name: newProduct.name,
-                    cost: newProduct.cost ? parseFloat(newProduct.cost) : 0,
-                    price: parseFloat(newProduct.price),
-                    description: newProduct.description,
-                    category: newProduct.category,
-                    type: newProduct.type,
-                    stock: newProduct.stock || 0,
-                    image: newProduct.image,
-                    sizes: newProduct.sizes || [],
-                    colors: newProduct.colors || [],
-                    featured: newProduct.featured || false,
-                    onSale: newProduct.on_sale || false,
-                    salePrice: newProduct.sale_price ? parseFloat(newProduct.sale_price) : null,
-                    created_at: newProduct.created_at || null,
-                  };
-                  set((state) => ({
-                    products: [...state.products, mappedData]
-                  }));
+                  // Verificar si el producto ya existe en el estado (evitar duplicados)
+                  const currentProducts = get().products;
+                  const productExists = currentProducts.some(p => p.id === newProduct.id);
+                  
+                  if (!productExists) {
+                    const mappedData = {
+                      id: newProduct.id,
+                      name: newProduct.name,
+                      cost: newProduct.cost ? parseFloat(newProduct.cost) : 0,
+                      price: parseFloat(newProduct.price),
+                      description: newProduct.description,
+                      category: newProduct.category,
+                      type: newProduct.type,
+                      stock: newProduct.stock || 0,
+                      image: newProduct.image,
+                      sizes: newProduct.sizes || [],
+                      colors: newProduct.colors || [],
+                      featured: newProduct.featured || false,
+                      onSale: newProduct.on_sale || false,
+                      salePrice: newProduct.sale_price ? parseFloat(newProduct.sale_price) : null,
+                      created_at: newProduct.created_at || null,
+                    };
+                    set((state) => ({
+                      products: [...state.products, mappedData]
+                    }));
+                  }
                 } else if (payload.eventType === 'DELETE' && payload.old) {
                   set((state) => ({
                     products: state.products.filter(p => p.id !== payload.old.id)

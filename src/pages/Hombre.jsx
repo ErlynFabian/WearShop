@@ -29,7 +29,7 @@ const Hombre = () => {
   }, [loadProducts, loadTypes]);
   const hombreProducts = products.filter(p => {
     const category = p.category?.toLowerCase();
-    return category === 'hombre' || category === 'hombres';
+    return (category === 'hombre' || category === 'hombres') && (p.stock || 0) > 0;
   });
   
   console.log('Hombre: Total productos:', products.length, 'Productos de hombre:', hombreProducts.length);

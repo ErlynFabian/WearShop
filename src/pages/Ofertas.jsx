@@ -20,7 +20,7 @@ const Ofertas = () => {
     };
     loadData();
   }, [loadProducts, loadTypes]);
-  const ofertasProducts = products.filter(p => p.onSale === true);
+  const ofertasProducts = products.filter(p => p.onSale === true && (p.stock || 0) > 0);
   
   // Agrupar productos por tipo
   const productsByType = ofertasProducts.reduce((acc, product) => {
