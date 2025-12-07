@@ -12,6 +12,30 @@ export const salesService = {
     return data || [];
   },
 
+  /**
+   * Obtener el stock disponible de un producto considerando ventas pendientes
+   * El stock físico ya refleja las ventas pendientes porque se resta al crearlas,
+   * pero esta función verifica que el stock disponible sea correcto
+   * @param {number} productId - ID del producto
+   * @returns {Promise<number>} - Stock disponible
+   */
+  async getAvailableStock(productId) {
+    try {
+      // Obtener el producto
+      const product = await productsService.getById(productId);
+      if (!product) return 0;
+
+      // El stock físico ya refleja las ventas pendientes porque se resta cuando se crean
+      // Por lo tanto, el stock disponible es simplemente el stock físico actual
+      const availableStock = product.stock || 0;
+
+      return Math.max(0, availableStock);
+    } catch (error) {
+      console.error('Error calculating available stock:', error);
+      return 0;
+    }
+  },
+
   async getTotalSales() {
     const { data, error } = await supabase
       .from('sales')

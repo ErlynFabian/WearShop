@@ -6,7 +6,10 @@ import { formatPrice } from '../utils/formatPrice';
 
 const CartSidebar = () => {
   const { isOpen, closeCart, items, removeItem, updateQuantity, clearCart } = useCartStore();
-  const total = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const total = items.reduce((total, item) => {
+    const displayPrice = item.onSale && item.salePrice ? item.salePrice : item.price;
+    return total + (displayPrice * item.quantity);
+  }, 0);
 
   return (
     <AnimatePresence>
@@ -64,8 +67,14 @@ const CartSidebar = () => {
                       />
                       <div className="flex-1">
                         <h3 className="font-semibold text-black mb-1">{item.name}</h3>
+                        {item.selectedSize && (
+                          <p className="text-xs text-gray-600 mb-1">Talla: {item.selectedSize}</p>
+                        )}
+                        {item.selectedColor && (
+                          <p className="text-xs text-gray-600 mb-1">Color: {item.selectedColor}</p>
+                        )}
                         <p className="text-lg font-bold text-black mb-2">
-                          {formatPrice(item.price)}
+                          {formatPrice(item.onSale && item.salePrice ? item.salePrice : item.price)}
                         </p>
                         <div className="flex items-center space-x-3">
                           <button
@@ -109,7 +118,32 @@ const CartSidebar = () => {
                 </div>
                 <button
                   onClick={() => {
-                    useToastStore.getState().info('Próximamente: Esta funcionalidad estará disponible pronto.');
+                    // Generar mensaje de WhatsApp con todos los productos
+                    let message = 'Hola, me interesa realizar la siguiente compra:\n\n';
+                    
+                    items.forEach((item, index) => {
+                      const displayPrice = item.onSale && item.salePrice ? item.salePrice : item.price;
+                      const itemTotal = displayPrice * item.quantity;
+                      
+                      message += `${index + 1}. ${item.name}\n`;
+                      message += `   Cantidad: ${item.quantity}\n`;
+                      message += `   Precio unitario: ${formatPrice(displayPrice)}\n`;
+                      if (item.selectedSize) {
+                        message += `   Talla: ${item.selectedSize}\n`;
+                      }
+                      if (item.selectedColor) {
+                        message += `   Color: ${item.selectedColor}\n`;
+                      }
+                      message += `   Subtotal: ${formatPrice(itemTotal)}\n\n`;
+                    });
+                    
+                    message += `Total: ${formatPrice(total)}`;
+                    
+                    // Usar formato directo de WhatsApp
+                    const phoneNumber = '18299657361'; // +1 (829) 965-7361 sin formato
+                    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                    useToastStore.getState().info('Abriendo WhatsApp...');
                   }}
                   className="w-full bg-black text-white py-4 font-bold text-lg hover:opacity-90 transition-opacity"
                 >

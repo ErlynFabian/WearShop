@@ -128,7 +128,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const Reports = () => {
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('month'); // 'day', 'week', 'month'
+  const [period, setPeriod] = useState('month'); // 'day', 'week', 'month', 'months'
   const [selectedMonth, setSelectedMonth] = useState('');
   const [salesData, setSalesData] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
@@ -142,9 +142,23 @@ const Reports = () => {
   }, [period, selectedMonth]);
 
   const getDateRange = () => {
-    // Siempre mostrar el mes actual completo
     const now = new Date();
     const currentYear = now.getFullYear();
+    
+    // Si el período es "months", devolver el rango del año actual completo
+    if (period === 'months') {
+      // Primer día del año actual
+      const startDate = new Date(currentYear, 0, 1);
+      startDate.setHours(0, 0, 0, 0);
+      
+      // Último día del año actual
+      const endDate = new Date(currentYear, 11, 31);
+      endDate.setHours(23, 59, 59, 999);
+      
+      return { startDate, endDate };
+    }
+    
+    // Para otros períodos, mostrar el mes actual completo
     const currentMonth = now.getMonth();
     
     // Primer día del mes actual
@@ -170,6 +184,9 @@ const Reports = () => {
         currentData = await reportsService.getSalesByDay(startDate, endDate);
       } else if (period === 'week') {
         currentData = await reportsService.getSalesByWeek(startDate, endDate);
+      } else if (period === 'months') {
+        // Para "meses", obtener todos los meses del año actual con ventas
+        currentData = await reportsService.getSalesByMonth(startDate, endDate);
       } else {
         currentData = await reportsService.getSalesByMonth(startDate, endDate);
       }
@@ -195,6 +212,9 @@ const Reports = () => {
           comparisonData = await reportsService.getSalesByDay(prevStartDate, prevEndDate);
         } else if (period === 'week') {
           comparisonData = await reportsService.getSalesByWeek(prevStartDate, prevEndDate);
+        } else if (period === 'months') {
+          // Para "meses", no se permite comparación
+          comparisonData = [];
         } else {
           comparisonData = await reportsService.getSalesByMonth(prevStartDate, prevEndDate);
         }
@@ -206,6 +226,8 @@ const Reports = () => {
           ? new Date(item.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
           : period === 'week'
           ? item.weekLabel || 'Semana'
+          : period === 'months'
+          ? item.monthLabel || 'Mes'
           : item.monthLabel || 'Mes',
         ventas: parseFloat(item.total || 0),
         cantidad: parseInt(item.quantity || 0),
@@ -219,6 +241,8 @@ const Reports = () => {
           ? new Date(item.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
           : period === 'week'
           ? item.weekLabel || 'Semana'
+          : period === 'months'
+          ? item.monthLabel || 'Mes'
           : item.monthLabel || 'Mes',
         ventasComparacion: parseFloat(item.total || 0),
         cantidadComparacion: parseInt(item.quantity || 0),
@@ -249,7 +273,19 @@ const Reports = () => {
         }]);
       } else {
         // Para el período mensual, mostrar ambos meses como puntos separados
-        if (period === 'month') {
+        // No permitir comparación para el período "meses"
+        if (period === 'months') {
+          // Para "meses", solo mostrar los meses del año actual con ventas
+          setSalesData(formattedCurrentData.length > 0 ? formattedCurrentData : [{ 
+            name: 'Sin datos', 
+            ventas: 0, 
+            cantidad: 0, 
+            transacciones: 0,
+            ventasComparacion: 0,
+            cantidadComparacion: 0,
+            transaccionesComparacion: 0
+          }]);
+        } else if (period === 'month') {
           const combinedData = [];
           
           // Agregar mes de comparación primero
@@ -363,8 +399,8 @@ const Reports = () => {
         average: revenueData?.average || 0
       });
 
-      // Solo comparar períodos si se ha seleccionado un mes
-      if (selectedMonth && selectedMonth.trim() !== '' && prevStartDate && prevEndDate) {
+      // Solo comparar períodos si se ha seleccionado un mes y no es el período "meses"
+      if (period !== 'months' && selectedMonth && selectedMonth.trim() !== '' && prevStartDate && prevEndDate) {
         try {
           const comparisonResult = await reportsService.comparePeriods(
             prevStartDate,
@@ -516,7 +552,7 @@ const Reports = () => {
             >
               <FiFilter className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Filtros</span>
-              {period !== 'month' && (
+              {(period !== 'month' && period !== 'months') && (
                 <span className="bg-yellow-400 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                   !
                 </span>
@@ -553,12 +589,19 @@ const Reports = () => {
                   </label>
                   <select
                     value={period}
-                    onChange={(e) => setPeriod(e.target.value)}
+                    onChange={(e) => {
+                      setPeriod(e.target.value);
+                      // Si se selecciona "meses", limpiar el mes de comparación
+                      if (e.target.value === 'months') {
+                        setSelectedMonth('');
+                      }
+                    }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                   >
                     <option value="day">Diario</option>
                     <option value="week">Semanal</option>
                     <option value="month">Mensual</option>
+                    <option value="months">Meses</option>
                   </select>
                 </div>
                 <div>
@@ -569,10 +612,14 @@ const Reports = () => {
                     type="month"
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    disabled={period === 'months'}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    Se mostrará el mes actual comparado con el mes seleccionado
+                    {period === 'months' 
+                      ? 'La comparación no está disponible para el período "Meses"'
+                      : 'Se mostrará el mes actual comparado con el mes seleccionado'
+                    }
                   </p>
                 </div>
               </div>

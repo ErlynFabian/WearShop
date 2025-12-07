@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiEye, FiCalendar, FiArrowLeft, FiTrendingUp } from 'react-icons/fi';
 import { salesService } from '../../services/salesService';
 import useProductsStore from '../../context/productsStore';
@@ -9,6 +9,7 @@ import { formatPrice } from '../../utils/formatPrice';
 import TableSkeleton from '../../components/skeletons/TableSkeleton';
 
 const SalesManager = () => {
+  const location = useLocation();
   const { products } = useProductsStore();
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +24,34 @@ const SalesManager = () => {
   useEffect(() => {
     loadSales();
   }, []);
+
+  // Efecto para manejar el state de navegación (cuando se crea una venta)
+  useEffect(() => {
+    if (location.state) {
+      const { selectedMonth: monthFromState, showSuccessAlert } = location.state;
+      
+      if (monthFromState) {
+        // Seleccionar el mes que viene del state
+        setSelectedMonth(monthFromState);
+        setSearchTerm('');
+        setStatusFilter('all');
+        setCurrentPage(1);
+      }
+      
+      if (showSuccessAlert) {
+        // Mostrar alerta de éxito
+        setAlertModal({
+          isOpen: true,
+          title: '¡Éxito!',
+          message: 'La venta se ha creado exitosamente.',
+          type: 'success'
+        });
+        
+        // Limpiar el state para que no se muestre de nuevo al recargar
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state]);
 
   const loadSales = async () => {
     setLoading(true);

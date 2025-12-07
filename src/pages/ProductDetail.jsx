@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiShoppingCart, FiTruck, FiShield, FiInfo, FiLink2 } from 'react-icons/fi';
-import { FaWhatsapp } from 'react-icons/fa';
 import useProductsStore from '../context/productsStore';
 import useCartStore from '../context/cartStore';
 import useToastStore from '../context/toastStore';
@@ -139,23 +138,23 @@ const ProductDetail = () => {
   const productUrl = typeof window !== 'undefined' ? `${window.location.origin}/producto/${product.id}` : '';
 
   const handleAddToCart = () => {
-    addItem(product);
+    const productWithVariants = {
+      ...product,
+      selectedSize: selectedSize || null,
+      selectedColor: selectedColor || null
+    };
+    addItem(productWithVariants);
     openCart();
   };
 
-  const handleWhatsApp = () => {
-    const displayPrice = product.onSale && product.salePrice ? product.salePrice : product.price;
-    let message = `Hola, me interesa el producto: ${product.name} - $${displayPrice.toFixed(2)}`;
-    if (product.onSale && product.salePrice) {
-      message += ` (Precio original: $${product.price.toFixed(2)})`;
-    }
-    if (selectedSize) message += `\nTalla: ${selectedSize}`;
-    if (selectedColor) message += `\nColor: ${selectedColor}`;
-    // Usar formato directo de WhatsApp para que el mensaje aparezca correctamente
-    const phoneNumber = '18299657361'; // +1 (829) 965-7361 sin formato
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    useToastStore.getState().info('Abriendo WhatsApp...');
+  const handleBuy = () => {
+    const productWithVariants = {
+      ...product,
+      selectedSize: selectedSize || null,
+      selectedColor: selectedColor || null
+    };
+    addItem(productWithVariants);
+    openCart();
   };
 
   const handleCopyLink = () => {
@@ -171,19 +170,19 @@ const ProductDetail = () => {
   const hasSizes = product.sizes && product.sizes.length > 0;
   const hasColors = product.colors && product.colors.length > 0;
   
-  // El botón de WhatsApp solo está habilitado si:
+  // El botón de comprar solo está habilitado si:
   // - No hay tallas ni colores (producto sin variantes), O
   // - Hay tallas y está seleccionada, Y hay colores y está seleccionado
-  const isWhatsAppEnabled = 
+  const isBuyEnabled = 
     (!hasSizes && !hasColors) || 
     (hasSizes && selectedSize && hasColors && selectedColor) ||
     (hasSizes && selectedSize && !hasColors) ||
     (!hasSizes && hasColors && selectedColor);
 
   // Función para obtener el texto del botón según lo que falte
-  const getWhatsAppButtonText = () => {
-    if (isWhatsAppEnabled) {
-      return 'Pedir por WhatsApp';
+  const getBuyButtonText = () => {
+    if (isBuyEnabled) {
+      return 'Comprar';
     }
     
     if (hasSizes && hasColors) {
@@ -200,7 +199,7 @@ const ProductDetail = () => {
       return 'Selecciona color';
     }
     
-    return 'Pedir por WhatsApp';
+    return 'Comprar';
   };
 
   return (
@@ -333,25 +332,26 @@ const ProductDetail = () => {
             )}
 
             <div className="space-y-4 mb-8">
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-black text-white py-4 px-6 font-bold text-base rounded-lg flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity"
-              >
-                <FiShoppingCart className="w-5 h-5" />
-                <span>Agregar a la bolsa de compras</span>
-              </button>
-              <button
-                onClick={handleWhatsApp}
-                disabled={!isWhatsAppEnabled}
-                className={`w-full py-4 px-6 font-bold text-base rounded-lg flex items-center justify-center space-x-2 transition-colors ${
-                  isWhatsAppEnabled
-                    ? 'bg-green-500 text-white hover:bg-green-600'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {isWhatsAppEnabled && <FaWhatsapp className="w-5 h-5" />}
-                <span>{getWhatsAppButtonText()}</span>
-              </button>
+              <div className="flex gap-4">
+                <button
+                  onClick={handleBuy}
+                  disabled={!isBuyEnabled}
+                  className={`flex-1 py-4 px-6 font-bold text-base rounded-lg flex items-center justify-center space-x-2 transition-colors ${
+                    isBuyEnabled
+                      ? 'bg-black text-white hover:opacity-90'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  <span>{getBuyButtonText()}</span>
+                </button>
+                <button
+                  onClick={handleAddToCart}
+                  className="text-black bg-transparent py-4 px-4 font-bold text-base rounded-lg flex items-center justify-center hover:opacity-70 transition-opacity flex-shrink-0"
+                  title="Agregar a la bolsa de compras"
+                >
+                  <FiShoppingCart className="w-5 h-5" />
+                </button>
+              </div>
               <button
                 onClick={handleCopyLink}
                 className="w-full border-2 border-gray-300 text-black py-3 px-6 font-medium text-base rounded-lg flex items-center justify-center space-x-2 hover:border-black transition-colors"
