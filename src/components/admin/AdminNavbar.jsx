@@ -36,8 +36,12 @@ const AdminNavbar = ({ onMenuClick, sidebarOpen }) => {
 
         {/* User */}
         <div className="flex items-center space-x-2 sm:space-x-3 pl-2 sm:pl-4 border-l border-gray-200">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-black rounded-full flex items-center justify-center">
-            <FiUser className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex items-center justify-center border-2 border-gray-200">
+            <img 
+              src="/file.jpeg" 
+              alt="Admin Avatar" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="hidden sm:block">
             <p className="text-sm font-medium text-black">{user?.username || 'Admin'}</p>

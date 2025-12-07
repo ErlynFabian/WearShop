@@ -56,7 +56,7 @@ const Toast = () => {
   };
 
   return (
-    <div className="fixed top-20 right-4 z-[100] flex flex-col gap-2 max-w-md w-full pointer-events-none">
+    <div className="fixed top-20 right-2 sm:right-4 z-[100] flex flex-col gap-2 max-w-xs sm:max-w-md w-full pointer-events-none">
       <AnimatePresence>
         {toasts.map((toast) => {
           const styles = getStyles(toast.type);
@@ -67,21 +67,21 @@ const Toast = () => {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 300, scale: 0.8 }}
               transition={{ duration: 0.3, type: 'spring', damping: 25 }}
-              className={`${styles.bg} border rounded-lg shadow-lg p-4 flex items-start space-x-3 pointer-events-auto`}
+              className={`${styles.bg} border rounded-lg shadow-lg p-2.5 sm:p-4 flex items-start space-x-2 sm:space-x-3 pointer-events-auto`}
             >
               <div className={`${styles.icon} flex-shrink-0 mt-0.5`}>
                 {getIcon(toast.type)}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 flex-wrap">
-                  <p className={`${styles.text} text-sm font-medium`}>
+                <div className="flex items-center space-x-1.5 sm:space-x-2 flex-wrap">
+                  <p className={`${styles.text} text-xs sm:text-sm font-medium leading-tight`}>
                     {toast.message}
                   </p>
                   {toast.count > 1 && (
                     <motion.span 
                       initial={{ scale: 0.8 }}
                       animate={{ scale: 1 }}
-                      className={`${styles.icon} px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0`}
+                      className={`${styles.icon} px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold flex-shrink-0`}
                       style={{
                         backgroundColor: toast.type === 'success' ? 'rgba(34, 197, 94, 0.2)' :
                                        toast.type === 'error' ? 'rgba(239, 68, 68, 0.2)' :
@@ -96,10 +96,10 @@ const Toast = () => {
               </div>
               <button
                 onClick={() => removeToast(toast.id)}
-                className={`${styles.text} hover:opacity-70 transition-opacity flex-shrink-0`}
+                className={`${styles.text} hover:opacity-70 transition-opacity flex-shrink-0 mt-0.5`}
                 aria-label="Cerrar notificación"
               >
-                <FiX className="w-4 h-4" />
+                <FiX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             </motion.div>
           );

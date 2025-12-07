@@ -17,14 +17,119 @@ import { formatPrice } from '../../utils/formatPrice';
 import useToastStore from '../../context/toastStore';
 import * as XLSX from 'xlsx';
 
+// Componente personalizado para el Tooltip
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active) return null;
+  
+  // Obtener el objeto de datos completo del primer payload (si existe)
+  const dataPoint = payload && payload[0]?.payload;
+  
+  // Si hay dataPoint, usarlo (es la forma más confiable)
+  if (dataPoint) {
+    const hasAnyData = (
+      (dataPoint.ventas !== undefined && dataPoint.ventas !== null) ||
+      (dataPoint.cantidad !== undefined && dataPoint.cantidad !== null) ||
+      (dataPoint.transacciones !== undefined && dataPoint.transacciones !== null) ||
+      (dataPoint.ventasComparacion !== undefined && dataPoint.ventasComparacion !== null) ||
+      (dataPoint.cantidadComparacion !== undefined && dataPoint.cantidadComparacion !== null) ||
+      (dataPoint.transaccionesComparacion !== undefined && dataPoint.transaccionesComparacion !== null)
+    );
+    
+    if (hasAnyData) {
+      return (
+        <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg min-w-[200px] z-50">
+          <p className="font-semibold text-gray-800 mb-2 border-b pb-1">{label || dataPoint.name || 'Datos'}</p>
+          <div className="space-y-1">
+            {/* Mostrar información del dataPoint - mostrar incluso si es 0 */}
+            {dataPoint.ventas !== undefined && dataPoint.ventas !== null && (
+              <p className="text-sm text-gray-600">
+                <span style={{ color: '#facc15' }}>●</span> Ingresos: <span className="font-semibold">{formatPrice(dataPoint.ventas)}</span>
+              </p>
+            )}
+            {dataPoint.cantidad !== undefined && dataPoint.cantidad !== null && (
+              <p className="text-sm text-gray-600">
+                <span style={{ color: '#fbbf24' }}>●</span> Cantidad: <span className="font-semibold">{dataPoint.cantidad} unidades</span>
+              </p>
+            )}
+            {dataPoint.transacciones !== undefined && dataPoint.transacciones !== null && (
+              <p className="text-sm text-gray-600">
+                <span style={{ color: '#666' }}>●</span> Transacciones: <span className="font-semibold">{dataPoint.transacciones}</span>
+              </p>
+            )}
+            {dataPoint.ventasComparacion !== undefined && dataPoint.ventasComparacion !== null && dataPoint.ventasComparacion > 0 && (
+              <p className="text-sm text-gray-500 mt-2 pt-2 border-t">
+                <span style={{ color: '#94a3b8' }}>●</span> Ingresos (Comparado): <span className="font-semibold">{formatPrice(dataPoint.ventasComparacion)}</span>
+              </p>
+            )}
+            {dataPoint.cantidadComparacion !== undefined && dataPoint.cantidadComparacion !== null && dataPoint.cantidadComparacion > 0 && (
+              <p className="text-sm text-gray-500">
+                <span style={{ color: '#cbd5e1' }}>●</span> Cantidad (Comparado): <span className="font-semibold">{dataPoint.cantidadComparacion} unidades</span>
+              </p>
+            )}
+            {dataPoint.transaccionesComparacion !== undefined && dataPoint.transaccionesComparacion !== null && dataPoint.transaccionesComparacion > 0 && (
+              <p className="text-sm text-gray-500">
+                <span style={{ color: '#94a3b8' }}>●</span> Transacciones (Comparado): <span className="font-semibold">{dataPoint.transaccionesComparacion}</span>
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+  }
+  
+  // Si no hay dataPoint o no tiene datos, intentar usar el payload directamente
+  if (payload && payload.length > 0) {
+    const validPayloads = payload.filter(entry => 
+      entry && 
+      entry.value !== null && 
+      entry.value !== undefined && 
+      !isNaN(entry.value)
+    );
+    
+    if (validPayloads.length > 0) {
+      return (
+        <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg min-w-[200px] z-50">
+          <p className="font-semibold text-gray-800 mb-2 border-b pb-1">{label || 'Datos'}</p>
+          <div className="space-y-1">
+            {validPayloads.map((entry, index) => {
+              const value = entry.value || 0;
+              const dataKey = entry.dataKey || '';
+              let name = entry.name || dataKey || 'Valor';
+              let formattedValue = '';
+              
+              // Formatear el valor según el tipo
+              if (dataKey === 'ventas' || dataKey === 'ventasComparacion' || name.includes('Ingresos')) {
+                formattedValue = formatPrice(value);
+              } else if (dataKey === 'cantidad' || dataKey === 'cantidadComparacion' || name.includes('Cantidad')) {
+                formattedValue = `${value} unidades`;
+              } else if (dataKey === 'transacciones' || dataKey === 'transaccionesComparacion' || name.includes('Transacciones')) {
+                formattedValue = `${value} transacciones`;
+              } else {
+                formattedValue = typeof value === 'number' ? formatPrice(value) : String(value);
+              }
+              
+              const color = entry.color || '#666';
+              
+              return (
+                <p key={index} className="text-sm text-gray-600">
+                  <span style={{ color }}>●</span> {name}: <span className="font-semibold">{formattedValue}</span>
+                </p>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+  }
+  
+  // Si no hay datos válidos, no mostrar tooltip
+  return null;
+};
+
 const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month'); // 'day', 'week', 'month'
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    // Por defecto, mes actual en formato YYYY-MM
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [selectedMonth, setSelectedMonth] = useState('');
   const [salesData, setSalesData] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [revenue, setRevenue] = useState({ total: 0, count: 0, average: 0 });
@@ -58,18 +163,45 @@ const Reports = () => {
     try {
       const { startDate, endDate } = getDateRange();
       
-      // Cargar datos según el período seleccionado
-      let data = [];
+      // Cargar datos del mes actual
+      let currentData = [];
+      
       if (period === 'day') {
-        data = await reportsService.getSalesByDay(startDate, endDate);
+        currentData = await reportsService.getSalesByDay(startDate, endDate);
       } else if (period === 'week') {
-        data = await reportsService.getSalesByWeek(startDate, endDate);
+        currentData = await reportsService.getSalesByWeek(startDate, endDate);
       } else {
-        data = await reportsService.getSalesByMonth(startDate, endDate);
+        currentData = await reportsService.getSalesByMonth(startDate, endDate);
       }
 
-      // Formatear datos para los gráficos
-      const formattedData = (data || []).map(item => ({
+      // Solo cargar datos de comparación si se ha seleccionado un mes
+      let comparisonData = [];
+      let prevStartDate = null;
+      let prevEndDate = null;
+      
+      if (selectedMonth && selectedMonth.trim() !== '') {
+        // Comparar con el mes seleccionado (período de comparación)
+        const [year, month] = selectedMonth.split('-').map(Number);
+        
+        // Período de comparación: mes seleccionado completo (del día 1 al último día del mes)
+        prevStartDate = new Date(year, month - 1, 1);
+        prevStartDate.setHours(0, 0, 0, 0);
+        
+        prevEndDate = new Date(year, month, 0); // Último día del mes seleccionado
+        prevEndDate.setHours(23, 59, 59, 999);
+
+        // Cargar datos del mes de comparación
+        if (period === 'day') {
+          comparisonData = await reportsService.getSalesByDay(prevStartDate, prevEndDate);
+        } else if (period === 'week') {
+          comparisonData = await reportsService.getSalesByWeek(prevStartDate, prevEndDate);
+        } else {
+          comparisonData = await reportsService.getSalesByMonth(prevStartDate, prevEndDate);
+        }
+      }
+
+      // Formatear datos del mes actual
+      const formattedCurrentData = (currentData || []).map(item => ({
         name: period === 'day' 
           ? new Date(item.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
           : period === 'week'
@@ -77,10 +209,147 @@ const Reports = () => {
           : item.monthLabel || 'Mes',
         ventas: parseFloat(item.total || 0),
         cantidad: parseInt(item.quantity || 0),
-        transacciones: parseInt(item.count || 0)
+        transacciones: parseInt(item.count || 0),
+        dateKey: period === 'day' ? item.date : (period === 'week' ? item.date : item.date)
       }));
 
-      setSalesData(formattedData.length > 0 ? formattedData : [{ name: 'Sin datos', ventas: 0, cantidad: 0, transacciones: 0 }]);
+      // Formatear datos del mes de comparación
+      const formattedComparisonData = (comparisonData || []).map(item => ({
+        name: period === 'day' 
+          ? new Date(item.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+          : period === 'week'
+          ? item.weekLabel || 'Semana'
+          : item.monthLabel || 'Mes',
+        ventasComparacion: parseFloat(item.total || 0),
+        cantidadComparacion: parseInt(item.quantity || 0),
+        transaccionesComparacion: parseInt(item.count || 0),
+        dateKey: period === 'day' ? item.date : (period === 'week' ? item.date : item.date)
+      }));
+
+      // Si no hay mes seleccionado, solo mostrar datos del mes actual
+      if (!selectedMonth || selectedMonth.trim() === '') {
+        const formattedData = formattedCurrentData.map(item => ({
+          name: item.name,
+          ventas: item.ventas,
+          cantidad: item.cantidad,
+          transacciones: item.transacciones,
+          ventasComparacion: 0,
+          cantidadComparacion: 0,
+          transaccionesComparacion: 0
+        }));
+        
+        setSalesData(formattedData.length > 0 ? formattedData : [{ 
+          name: 'Sin datos', 
+          ventas: 0, 
+          cantidad: 0, 
+          transacciones: 0,
+          ventasComparacion: 0,
+          cantidadComparacion: 0,
+          transaccionesComparacion: 0
+        }]);
+      } else {
+        // Para el período mensual, mostrar ambos meses como puntos separados
+        if (period === 'month') {
+          const combinedData = [];
+          
+          // Agregar mes de comparación primero
+          if (formattedComparisonData.length > 0) {
+            const compItem = formattedComparisonData[0];
+            combinedData.push({
+              name: compItem.name,
+              ventas: 0,
+              cantidad: 0,
+              transacciones: 0,
+              ventasComparacion: compItem.ventasComparacion,
+              cantidadComparacion: compItem.cantidadComparacion,
+              transaccionesComparacion: compItem.transaccionesComparacion
+            });
+          }
+          
+          // Agregar mes actual
+          if (formattedCurrentData.length > 0) {
+            const currentItem = formattedCurrentData[0];
+            combinedData.push({
+              name: currentItem.name,
+              ventas: currentItem.ventas,
+              cantidad: currentItem.cantidad,
+              transacciones: currentItem.transacciones,
+              ventasComparacion: 0,
+              cantidadComparacion: 0,
+              transaccionesComparacion: 0
+            });
+          }
+          
+          // Si no hay datos, crear un elemento vacío
+          if (combinedData.length === 0) {
+            combinedData.push({
+              name: 'Sin datos',
+              ventas: 0,
+              cantidad: 0,
+              transacciones: 0,
+              ventasComparacion: 0,
+              cantidadComparacion: 0,
+              transaccionesComparacion: 0
+            });
+          }
+          
+          setSalesData(combinedData);
+        } else {
+          // Para períodos diarios y semanales, combinar por nombre (fecha)
+          const allKeys = new Set([
+            ...formattedCurrentData.map(d => d.name),
+            ...formattedComparisonData.map(d => d.name)
+          ]);
+
+          // Crear datos combinados
+          const combinedData = Array.from(allKeys).map(key => {
+            const current = formattedCurrentData.find(d => d.name === key) || {
+              ventas: 0,
+              cantidad: 0,
+              transacciones: 0
+            };
+            const comparison = formattedComparisonData.find(d => d.name === key) || {
+              ventasComparacion: 0,
+              cantidadComparacion: 0,
+              transaccionesComparacion: 0
+            };
+            
+            return {
+              name: key,
+              ventas: current.ventas || 0,
+              cantidad: current.cantidad || 0,
+              transacciones: current.transacciones || 0,
+              ventasComparacion: comparison.ventasComparacion || 0,
+              cantidadComparacion: comparison.cantidadComparacion || 0,
+              transaccionesComparacion: comparison.transaccionesComparacion || 0
+            };
+          });
+
+          // Ordenar por fecha
+          combinedData.sort((a, b) => {
+            // Buscar el dateKey correspondiente para ordenar correctamente
+            const aCurrent = formattedCurrentData.find(d => d.name === a.name);
+            const bCurrent = formattedCurrentData.find(d => d.name === b.name);
+            const aComp = formattedComparisonData.find(d => d.name === a.name);
+            const bComp = formattedComparisonData.find(d => d.name === b.name);
+            
+            const aDateKey = aCurrent?.dateKey || aComp?.dateKey || a.name;
+            const bDateKey = bCurrent?.dateKey || bComp?.dateKey || b.name;
+            
+            return aDateKey.localeCompare(bDateKey);
+          });
+          
+          setSalesData(combinedData.length > 0 ? combinedData : [{ 
+            name: 'Sin datos', 
+            ventas: 0, 
+            cantidad: 0, 
+            transacciones: 0,
+            ventasComparacion: 0,
+            cantidadComparacion: 0,
+            transaccionesComparacion: 0
+          }]);
+        }
+      }
 
       // Cargar productos más vendidos
       const top = await reportsService.getTopProducts(10, startDate, endDate);
@@ -94,49 +363,22 @@ const Reports = () => {
         average: revenueData?.average || 0
       });
 
-      // Comparar con el mes seleccionado (período de comparación)
-      const [year, month] = selectedMonth.split('-').map(Number);
-      
-      // Período de comparación: mes seleccionado completo (del día 1 al último día del mes)
-      const prevStartDate = new Date(year, month - 1, 1);
-      prevStartDate.setHours(0, 0, 0, 0);
-      
-      const prevEndDate = new Date(year, month, 0); // Último día del mes seleccionado
-      prevEndDate.setHours(23, 59, 59, 999);
-
-      try {
-        const comparisonData = await reportsService.comparePeriods(
-          prevStartDate,
-          prevEndDate,
-          startDate,
-          endDate
-        );
-        
-        // Logs de depuración para verificar la comparación
-        console.log('=== COMPARACIÓN DE PERÍODOS ===');
-        console.log('Período de Comparación (Mes Seleccionado):');
-        console.log('  Inicio:', prevStartDate.toLocaleDateString('es-ES'), prevStartDate.toLocaleTimeString('es-ES'));
-        console.log('  Fin:', prevEndDate.toLocaleDateString('es-ES'), prevEndDate.toLocaleTimeString('es-ES'));
-        console.log('  Ingresos:', formatPrice(comparisonData.period1.total), `(${comparisonData.period1.total})`);
-        console.log('  Transacciones:', comparisonData.period1.count);
-        console.log('Período Actual (Mes Actual):');
-        console.log('  Inicio:', startDate.toLocaleDateString('es-ES'), startDate.toLocaleTimeString('es-ES'));
-        console.log('  Fin:', endDate.toLocaleDateString('es-ES'), endDate.toLocaleTimeString('es-ES'));
-        console.log('  Ingresos:', formatPrice(comparisonData.period2.total), `(${comparisonData.period2.total})`);
-        console.log('  Transacciones:', comparisonData.period2.count);
-        console.log('Revenue State (debería ser mes actual):');
-        console.log('  Ingresos:', formatPrice(revenueData?.total || 0), `(${revenueData?.total || 0})`);
-        console.log('  Transacciones:', revenueData?.count || 0);
-        console.log('Cambios Calculados:');
-        console.log('  Cambio en Ingresos:', formatPrice(comparisonData.revenueChange), `(${comparisonData.revenueChange})`);
-        console.log('  Porcentaje Ingresos:', comparisonData.revenueChangePercent.toFixed(1) + '%');
-        console.log('  Cambio en Transacciones:', comparisonData.salesChange);
-        console.log('  Porcentaje Transacciones:', comparisonData.salesChangePercent.toFixed(1) + '%');
-        console.log('==============================');
-        
-        setComparison(comparisonData);
-      } catch (compError) {
-        console.error('Error comparing periods:', compError);
+      // Solo comparar períodos si se ha seleccionado un mes
+      if (selectedMonth && selectedMonth.trim() !== '' && prevStartDate && prevEndDate) {
+        try {
+          const comparisonResult = await reportsService.comparePeriods(
+            prevStartDate,
+            prevEndDate,
+            startDate,
+            endDate
+          );
+          
+          setComparison(comparisonResult);
+        } catch (compError) {
+          console.error('Error comparing periods:', compError);
+          setComparison(null);
+        }
+      } else {
         setComparison(null);
       }
 
@@ -426,7 +668,7 @@ const Reports = () => {
           {/* Gráfico de ventas */}
           <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 border border-gray-200 mb-6 sm:mb-8">
             <h3 className="text-lg sm:text-xl font-bold text-black mb-4 sm:mb-6">Evolución de Ventas</h3>
-            {salesData && salesData.length > 0 && salesData[0].ventas > 0 ? (
+            {salesData && salesData.length > 0 && (salesData[0].ventas > 0 || salesData[0].ventasComparacion > 0) ? (
               <div className="w-full overflow-x-auto">
                 <ResponsiveContainer width="100%" minHeight={300} height={400}>
                   <LineChart data={salesData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
@@ -440,8 +682,9 @@ const Reports = () => {
                     />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip 
-                      formatter={(value) => formatPrice(value)}
-                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }}
+                      content={CustomTooltip}
+                      cursor={{ stroke: '#facc15', strokeWidth: 1 }}
+                      allowEscapeViewBox={{ x: false, y: true }}
                     />
                     <Legend wrapperStyle={{ fontSize: '12px' }} />
                     <Line 
@@ -449,9 +692,20 @@ const Reports = () => {
                       dataKey="ventas" 
                       stroke="#facc15" 
                       strokeWidth={2}
-                      name="Ingresos"
+                      name="Ingresos (Mes Actual)"
                       dot={{ fill: '#facc15', r: 3 }}
                     />
+                    {comparison && (
+                      <Line 
+                        type="monotone" 
+                        dataKey="ventasComparacion" 
+                        stroke="#94a3b8" 
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        name="Ingresos (Mes Comparado)"
+                        dot={{ fill: '#94a3b8', r: 3 }}
+                      />
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -465,7 +719,7 @@ const Reports = () => {
           {/* Gráfico de cantidad vendida */}
           <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 border border-gray-200 mb-6 sm:mb-8">
             <h3 className="text-lg sm:text-xl font-bold text-black mb-4 sm:mb-6">Cantidad de Productos Vendidos</h3>
-            {salesData && salesData.length > 0 && salesData[0].cantidad > 0 ? (
+            {salesData && salesData.length > 0 && (salesData[0].cantidad > 0 || salesData[0].cantidadComparacion > 0) ? (
               <div className="w-full overflow-x-auto">
                 <ResponsiveContainer width="100%" minHeight={300} height={400}>
                   <BarChart data={salesData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
@@ -479,10 +733,15 @@ const Reports = () => {
                     />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }}
+                      content={CustomTooltip}
+                      cursor={{ fill: 'rgba(251, 191, 36, 0.1)' }}
+                      allowEscapeViewBox={{ x: false, y: true }}
                     />
                     <Legend wrapperStyle={{ fontSize: '12px' }} />
-                    <Bar dataKey="cantidad" fill="#fbbf24" name="Cantidad" />
+                    <Bar dataKey="cantidad" fill="#fbbf24" name="Cantidad (Mes Actual)" />
+                    {comparison && (
+                      <Bar dataKey="cantidadComparacion" fill="#cbd5e1" name="Cantidad (Mes Comparado)" />
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
